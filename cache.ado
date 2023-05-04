@@ -13,25 +13,78 @@ Output:
 ==================================================*/
 
 /*==================================================
-              0: Program set up
+0: Program set up
 ==================================================*/
 program define cache, rclass
-syntax [], []
 version 16.0
 
 //========================================================
-// 
+//  SPLIT
 //========================================================
 
 
+* Split the overall command, stored in `0' in a left and right part.
+local 0 "cache subcmd, option1() option2() opt : pip wb, clear"
+
+gettoken left right : 0, parse(":")
+
+// remove first : in each part (left part should not have any)
+local left:  subinstr local left ":" ""
+local right: subinstr local right ":" ""
+
 //========================================================
-// 
+// Syntax of left part
 //========================================================
+* Regular syntax parsing for cache
+local 0 : copy local left
+syntax [anything(name=subcmd)]   ///
+[,                   	   /// 
+dir                      ///
+pause                    ///
+clear                    ///
+replace                  ///
+force                    ///
+] 
+
+if ("`pause'" == "pause") pause on
+else                      pause off
+set checksum off
+
+* Run any code you want to run before the command on the right
 
 
 //========================================================
-// 
+// Set up and defenses
 //========================================================
+
+* dir
+if ("`dir'" == "") {
+*##s
+	mata {
+		cachedir = pwd() + "_cache"
+		 if (!direxists(cachedir)) {
+			 mkdir(cachedir)
+		 }
+		 st_local("dir", cachedir)
+	}
+*##e
+}
+
+
+//========================================================
+// Execution of right part
+//========================================================
+* Now, run the command on the right
+`right'
+
+* Run any code you want to run after the command on the right
+
+
+
+
+
+
+
 
 
 //========================================================
