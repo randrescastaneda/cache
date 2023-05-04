@@ -46,16 +46,15 @@ replace                  ///
 force                    ///
 ] 
 
-if ("`pause'" == "pause") pause on
-else                      pause off
-set checksum off
-
-* Run any code you want to run before the command on the right
-
 
 //========================================================
 // Set up and defenses
 //========================================================
+
+* pause
+if ("`pause'" == "pause") pause on
+else                      pause off
+set checksum off
 
 * dir
 if ("`dir'" == "") {
