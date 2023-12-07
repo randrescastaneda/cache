@@ -18,6 +18,15 @@ Output:
 program define cache, rclass
 version 16.0
 
+if "`1'" == "" {
+	di _n as txt "  Syntax: " in wh "witch" in gr" filename [ " _c
+	di in wh ", noa" in gr "ll " in wh "noallt" in gr "ypes ]"
+	exit
+}
+
+
+
+
 //========================================================
 //  SPLIT
 //========================================================
@@ -58,15 +67,15 @@ set checksum off
 
 * dir
 if ("`dir'" == "") {
-*##s
+	*##s
 	mata {
 		cachedir = pwd() + "_cache"
-		 if (!direxists(cachedir)) {
-			 mkdir(cachedir)
-		 }
-		 st_local("dir", cachedir)
+		if (!direxists(cachedir)) {
+			mkdir(cachedir)
+		}
+		st_local("dir", cachedir)
 	}
-*##e
+	*##e
 }
 
 
