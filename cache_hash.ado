@@ -16,31 +16,32 @@ Output:
               0: Program set up
 ==================================================*/
 program define cache_hash, rclass
-syntax [anything(name=subcmd)]   ///
-[,                   	   /// 
-	pause                    ///
-	clear                    ///
-	replace                  ///
-	force                    ///
-    *                        ///
-] 
-version 16.1
+
+    syntax [anything(name=subcmd)]   ///
+    [,                   	   /// 
+        pause                    ///
+        clear                    ///
+        replace                  ///
+        force                    ///
+        *                        ///
+    ] 
+    version 16.1
 
 
-/*==================================================
-    1: get command call hash
-==================================================*/
-if ("`subcmd'" == "get")  {
-    cache_hash_get, `options'
-    return add
-    exit
-}
+    /*==================================================
+        1: get command call hash
+    ==================================================*/
+    if ("`subcmd'" == "get")  {
+        cache_hash_get, `options'
+        return add
+        exit
+    }
 
 
 
-/*==================================================
-              2: 
-==================================================*/
+    /*==================================================
+                2: 
+    ==================================================*/
 
 
 end
@@ -54,13 +55,17 @@ program define cache_hash_get, rclass
 	
 	
 	qui {
-		if ("`prefix'" == "") local prefix = "ch"
+		if ("`prefix'" == "") local prefix = "_ch"
 		tempname shash
 		
-		mata:  st_numscalar("`shash'", hash1(`"`prefix'`cmd_call'"', ., 2)) 
-		local hash = "_ch" + strofreal(`shash', "%12.0g")
-		return local chhash = "`chhash'"
+		mata:  st_numscalar("`shash'", hash1(`"`cmd_call'"', ., 2)) 
+		local hash = "`prefix'" + strofreal(`shash', "%12.0g")
+		return local chhash = "`hash'"
 	}
+end
+
+
+
 
 exit
 /* End of do-file */

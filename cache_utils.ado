@@ -54,8 +54,8 @@ program define cache_utils_clean_local, rclass
         ]
 
     local text:  subinstr local text ":" ""
-    local text:  subinstr local text "  " " ", all
-    local text = trim("`text'")
+    local text = strtrim("`text'")
+    local text = stritrim("`text'")
 
     return local text =  "`text'"
     

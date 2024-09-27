@@ -16,116 +16,132 @@ Output:
 0: Program set up
 ==================================================*/
 program define cache, rclass
-version 16.1
+	version 16.1
 
-//========================================================
-//  SPLIT
-//========================================================
-
-
-* Split the overall command, stored in `0' in a left and right part.
-local 0 "cache subcmd, option1() option2() opt : pip wb, clear"
-
-gettoken left right : 0, parse(":")
+	//========================================================
+	//  SPLIT
+	//========================================================
 
 
-if ("`left'" == "")  {
-	dis "{err: make sure you follow this syntax}:"
-	dis _n "{cmd: cache {it:[subcmd] [, options]}: command}"
-	error 197
-}
+	* Split the overall command, stored in `0' in a left and right part.
+	local 0 "cache subcmd, option1() option2() opt : pip wb, clear"
 
-// remove first : in each part (left part should not have any)
-cache_utils clean_local, text("`left'")
-local left = "r(`text')"
-
-cache_utils clean_local, text("`right'")
-local right = "r(`text')"
+	gettoken left right : 0, parse(":")
 
 
+	if ("`left'" == "")  {
+		dis "{err: make sure you follow this syntax}:"
+		dis _n "{cmd: cache {it:[subcmd] [, options]}: command}"
+		error 197
+	}
 
-//========================================================
-// Syntax of left part
-//========================================================
-* Regular syntax parsing for cache
-local 0 : copy local left
-syntax [anything(name=subcmd)]   ///
-[,                   	   /// 
-	dir(string)              ///
-	project(string)          ///
-	pause                    ///
-	clear                    ///
-	replace                  ///
-	force                    ///
-] 
+	// remove first : in each part (left part should not have any)
+	cache_utils clean_local, text("`left'")
+	local left = "`r(text)'"
+
+	cache_utils clean_local, text("`right'")
+	local right = "`r(text)'"
 
 
-//========================================================
-// Set up and defenses
-//========================================================
-
-* pause
-if ("`pause'" == "pause") pause on
-else                      pause off
-set checksum off
-
-// Set dir if not selected by user
-if ("`dir'" == "") {
-	cache_setdir
-	local dir = "`r(dir)'"
-}
-
-if ("`project'" == "") {
-	local project = "_default"
-}
+	//========================================================
+	// Syntax of left part
+	//========================================================
+	* Regular syntax parsing for cache
+	local 0 : copy local left
+	syntax [anything(name=subcmd)]   ///
+	[,                   	   /// 
+		dir(string)              ///
+		project(string)          ///
+		prefix(string)           ///
+		noDATA                   ///
+		pause                    ///
+		clear                    ///
+		replace                  ///
+		force                    ///
+	] 
 
 
-//========================================================
-// HASHING and SIGNATURE
-//========================================================
+	//========================================================
+	// Set up and defenses
+	//========================================================
 
-// hash command --------------------------
-cache_hash, get cmd_call("`right'") PREfix("`subcmd'")
+	* pause
+	if ("`pause'" == "pause") pause on
+	else                      pause off
+	set checksum off
 
+	// Set dir if not selected by user
+	if ("`dir'" == "") {
+		cache_setdir
+		local dir = "`r(dir)'"
+	}
 
-//  Data signature --------------------------
-
-
-
-//  combine both parts --------------------------
-
-
-
-
-
-
-//========================================================
-// Execution of right part
-//========================================================
-* Now, run the command on the right
-`right'
-
-* Run any code you want to run after the command on the right
+	if ("`project'" == "") {
+		local project = "_default"
+	}
 
 
-//========================================================
-// Store results
-//========================================================
+	//========================================================
+	// HASHING and SIGNATURE
+	//========================================================
 
-// ret list --------------
+	// hash command --------------------------
+	cache_hash get,  cmd_call("`right'")
+	local cmd_hash = "`r(chhash)'"
+	return local cmd_hash = "`cmd_hash'"
+
+	//  Data signature --------------------------
+	if ("`data'" == "") {
+		qui datasignature 
+		local datasignature = "`r(datasignature)'"
+		return local datasignature = "`datasignature'"
+	}
+
+	//  combine both parts --------------------------
+	cache_hash get,  cmd_call("`cmd_hash'`datasignature'") prefix("`prefix'")
+	local call_hash = "`r(chhash)'"
+	return local call_hash = "`call_hash'"
+
+	//========================================================
+	// Find cache files and load
+	//========================================================
+
+	// Find files --------------------------
+	local files = dir "`dir'" files "`call_hash'*.dta"
+
+	if ("`files'" != "") {
+		// use files
+		exit
+	}
+
+	//========================================================
+	// If cache is not found 
+	//========================================================
+	* Now, run the command on the right
+	`right'
+	
+
+	* Run any code you want to run after the command on the right
 
 
-// data frame ----------
+	//========================================================
+	// Store results
+	//========================================================
+
+	// ret list --------------
 
 
-//========================================================
-// 
-//========================================================
+	// data frame ----------
 
 
-//========================================================
-// 
-//========================================================
+	//========================================================
+	// 
+	//========================================================
+
+
+	//========================================================
+	// 
+	//========================================================
 
 
 
