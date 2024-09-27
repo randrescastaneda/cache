@@ -33,6 +33,7 @@ version 16.1
 if ("`subcmd'" == "get")  {
     cache_hash_get, `options'
     return add
+    exit
 }
 
 

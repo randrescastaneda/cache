@@ -28,15 +28,20 @@ local 0 "cache subcmd, option1() option2() opt : pip wb, clear"
 
 gettoken left right : 0, parse(":")
 
-// remove first : in each part (left part should not have any)
-local left:  subinstr local left ":" ""
-local right: subinstr local right ":" ""
 
 if ("`left'" == "")  {
 	dis "{err: make sure you follow this syntax}:"
 	dis _n "{cmd: cache {it:[subcmd] [, options]}: command}"
 	error 197
 }
+
+// remove first : in each part (left part should not have any)
+cache_utils clean_local, text("`left'")
+local left = "r(`text')"
+
+cache_utils clean_local, text("`right'")
+local right = "r(`text')"
+
 
 
 //========================================================
@@ -74,14 +79,24 @@ if ("`project'" == "") {
 	local project = "_default"
 }
 
-//========================================================
-//  Data signature
-//========================================================
-
 
 //========================================================
-// hash command
+// HASHING and SIGNATURE
 //========================================================
+
+// hash command --------------------------
+cache_hash, get cmd_call("`right'") PREfix("`subcmd'")
+
+
+//  Data signature --------------------------
+
+
+
+//  combine both parts --------------------------
+
+
+
+
 
 
 //========================================================
@@ -137,6 +152,8 @@ program define cache_setdir, rclass
 	
 	return local dir = "`dir'"
 end
+
+
 
 
 exit
