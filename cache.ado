@@ -16,7 +16,7 @@ Output:
 0: Program set up
 ==================================================*/
 program define cache, rclass
-version 16.0
+version 16.1
 
 //========================================================
 //  SPLIT
@@ -47,6 +47,7 @@ local 0 : copy local left
 syntax [anything(name=subcmd)]   ///
 [,                   	   /// 
 	dir(string)              ///
+	project(string)          ///
 	pause                    ///
 	clear                    ///
 	replace                  ///
@@ -67,6 +68,10 @@ set checksum off
 if ("`dir'" == "") {
 	cache_setdir
 	local dir = "`r(dir)'"
+}
+
+if ("`project'" == "") {
+	local project = "_default"
 }
 
 //========================================================
