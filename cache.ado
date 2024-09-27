@@ -18,15 +18,6 @@ Output:
 program define cache, rclass
 version 16.0
 
-if "`1'" == "" {
-	di _n as txt "  Syntax: " in wh "witch" in gr" filename [ " _c
-	di in wh ", noa" in gr "ll " in wh "noallt" in gr "ypes ]"
-	exit
-}
-
-
-
-
 //========================================================
 //  SPLIT
 //========================================================
@@ -41,6 +32,13 @@ gettoken left right : 0, parse(":")
 local left:  subinstr local left ":" ""
 local right: subinstr local right ":" ""
 
+if ("`left'" == "")  {
+	dis "{err: make sure you follow this syntax}:"
+	dis _n "{cmd: cache {it:[subcmd] [, options]}: command}"
+	error 197
+}
+
+
 //========================================================
 // Syntax of left part
 //========================================================
@@ -48,11 +46,11 @@ local right: subinstr local right ":" ""
 local 0 : copy local left
 syntax [anything(name=subcmd)]   ///
 [,                   	   /// 
-dir                      ///
-pause                    ///
-clear                    ///
-replace                  ///
-force                    ///
+	dir(string)              ///
+	pause                    ///
+	clear                    ///
+	replace                  ///
+	force                    ///
 ] 
 
 
@@ -65,18 +63,12 @@ if ("`pause'" == "pause") pause on
 else                      pause off
 set checksum off
 
-* dir
+// Set dir if not selected by user
 if ("`dir'" == "") {
-	*##s
-	mata {
-		cachedir = pwd() + "_cache"
-		if (!direxists(cachedir)) {
-			mkdir(cachedir)
-		}
-		st_local("dir", cachedir)
-	}
-	*##e
+	cache_setdir
+	local dir = "`r(dir)'"
 }
+
 
 
 //========================================================
@@ -105,6 +97,27 @@ if ("`dir'" == "") {
 
 
 end
+
+//========================================================
+// Aux programs
+//========================================================
+
+
+// set directory
+cap program drop cache_setdir
+program define cache_setdir, rclass
+	mata {
+			cachedir = pwd() + "_cache"
+			if (!direxists(cachedir)) {
+				mkdir(cachedir)
+			}
+			st_local("dir", cachedir)
+		}
+	
+	return local dir = "`dir'"
+end
+
+
 exit
 /* End of do-file */
 
@@ -119,3 +132,14 @@ Notes:
 Version Control:
 
 
+
+
+*##s
+	// mata {
+	// 	cachedir = pwd() + "_cache"
+	// 	if (!direxists(cachedir)) {
+	// 		mkdir(cachedir)
+	// 	}
+	// 	st_local("dir", cachedir)
+	// }
+	*##e
