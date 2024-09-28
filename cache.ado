@@ -1,4 +1,4 @@
-/*==================================================
+/* ==================================================
 project:       Stata client to cache results of other commands
 Author:        R.Andres Castaneda 
 E-email:       acastanedaa@worldbank.org
@@ -15,7 +15,7 @@ Output:
 /*==================================================
 0: Program set up
 ==================================================*/
-program define cache, rclass
+program define cache, rclass properties(prefix)
 	version 16.1
 
 	//========================================================
@@ -24,8 +24,6 @@ program define cache, rclass
 
 
 	* Split the overall command, stored in `0' in a left and right part.
-	local 0 "cache subcmd, option1() option2() opt : pip wb, clear"
-
 	gettoken left right : 0, parse(":")
 
 
@@ -41,6 +39,13 @@ program define cache, rclass
 
 	cache_utils clean_local, text("`right'")
 	local right = "`r(text)'"
+
+	// Get command and properties
+	if (ustrregexm("`right'", "^([A-Za-z0-9_]+)(.*)")) {
+		local cmd =  ustrregexs(1)
+	}
+	local cmd_properties : results `cmd'
+	local cmd_results : results `cmd'
 
 
 	//========================================================
@@ -80,6 +85,9 @@ program define cache, rclass
 		local project = "_default"
 	}
 
+	// Add project to dir... I still don't know what the best way is
+	// probably local dir = "`dir'" + "\`project'"
+	// makedir "`dir'"
 
 	//========================================================
 	// HASHING and SIGNATURE
@@ -107,7 +115,7 @@ program define cache, rclass
 	//========================================================
 
 	// Find files --------------------------
-	local files = dir "`dir'" files "`call_hash'*.dta"
+	local files: dir "`dir'" files "`call_hash'*.dta"
 
 	if ("`files'" != "") {
 		// use files
@@ -120,18 +128,32 @@ program define cache, rclass
 	* Now, run the command on the right
 	`right'
 	
-
-	* Run any code you want to run after the command on the right
-
-
 	//========================================================
 	// Store results
 	//========================================================
 
 	// ret list --------------
+	local classes = "r e s"
+	local macro_namres = "scalars  macros  matrices  functions"
+	// get all the nammes of macros with info and save results 
+	foreach l of local classes {
+		foreach n of local macro_namres {
+			local `l'`n': `l'(`n')
+			//disp "{res:`l'`n'}: ``l'`n''"
+			if ("``l'`n''" != "") {
+				local ret_names = "`ret_names' `l'`n'"
+			}
+		}
+	}
+	return add // add results of cmd
 
+	// Now we have to save results in frame or dta or something.
+	
 
 	// data frame ----------
+	// if the the cmd returns a data frame, save it
+
+
 
 
 	//========================================================
