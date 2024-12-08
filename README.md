@@ -1,2 +1,283 @@
-# cache
-Stata package to cache results of other commands
+# cache &ndash A Stata package to cache results of other commands
+
+**cache** is a Stata program which allows for the full output and returned elements of commands to be saved (cached), and reloaded in the future without re-running the command. When cache is used, it will check if a command has previously been cached by the user, and if so reload all elements returned by the command, along with command output, without re-running the command itself.  Otherwise, if no previously cached result for the command exists, **cache** will run the command, and ceche all output and returns for future uses.  
+
+**cache** is useful if slow or resource intensive commands are run more than once, as after the first time they are run all output can be simply accessed from the previously saved version, saving on all processing time.  **cache** works with all valid Stata commands and is issued as a prefix before the desired command.
+
+**cache** stores for future loading all elements returned or otherwise altered by the command including (where relevant):
+
++ All elements of the ereturn, sreturn, or return list including functions
++ Graphical output
++ Any alterations to data (unless `nodata` is specified)
++ Any alterations to any frames in memory (unless `nodata` is specified)
+
+For examples, refer to the Example section below.
+
+## Syntax
+```s
+cache [subcommand, options] : anycommand 
+```
+
+where optional sub-commands (currently work in progress) are:
+
++ clean
++ list
+
+and options are:
+
++ dir(string): Specifies the directory where cached contents of commands will be saved to be restored later.  If not specified, a subdirectory of the current working directory named `_cache` is used by default.
++ project(string):  Allows for sub-folders within the cache directory if further control of cached contents is desired.
++ prefix(string): By default, all cached contents of a command will be saved with a prefix of `_ch` followed by the hash of the command as typed, along with the data signature of data in memory.  The prefix option will replace `_ch` with the indicated string
++ nodata: If `nodata` is specified, cache will save all command returns, but will not save data if any changes in data are detected.  
++ clear: Allows command implementation to proceed even if this would unsaved changes in data (similar, for example, to `use, clear`) 
++ replace: Forces cache to re-run the command and re-cache results, even if a previously cached version of command output has been found.  Such an example may be useful if commands are re-issued and command behaviour has changed.
+
+
+
+## Examples
+As a first example, consider a regression using Stata's auto dataset.  Provided this has not previously been cached, **cache** will run the command as normal, with elements saved into the ereturn, return and sreturn lists:
+
+```s
+cache: reg price weight length
+Command is not cached.  Implementing and caching for future.
+
+      Source |       SS           df       MS      Number of obs   =        74
+-------------+----------------------------------   F(2, 71)        =     18.91
+       Model |   220725280         2   110362640   Prob > F        =    0.0000
+    Residual |   414340116        71  5835776.28   R-squared       =    0.3476
+-------------+----------------------------------   Adj R-squared   =    0.3292
+       Total |   635065396        73  8699525.97   Root MSE        =    2415.7
+
+------------------------------------------------------------------------------
+       price | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      weight |   4.699065   1.122339     4.19   0.000     2.461184    6.936946
+      length |  -97.96031    39.1746    -2.50   0.015    -176.0722   -19.84838
+       _cons |   10386.54   4308.159     2.41   0.019     1796.316    18976.76
+------------------------------------------------------------------------------
+
+. return list
+
+macros:
+          r(call_hash) : "_ch3875265801"
+      r(datasignature) : "74:12(71728):3831085005:1395876116"
+           r(cmd_hash) : "_ch2053929229"
+
+matrices:
+              r(table) :  9 x 3
+
+. ereturn list
+
+scalars:
+                  e(N) =  74
+               e(df_m) =  2
+               e(df_r) =  71
+                  e(F) =  18.91138982106364
+                 e(r2) =  .3475630724239045
+               e(rmse) =  2415.735142695644
+                e(mss) =  220725280.2661347
+                e(rss) =  414340115.8554869
+               e(r2_a) =  .3291845674217611
+                 e(ll) =  -679.9123590332625
+               e(ll_0) =  -695.7128688987767
+               e(rank) =  3
+
+macros:
+            e(cmdline) : "regress price weight length"
+              e(title) : "Linear regression"
+          e(marginsok) : "XB default"
+                e(vce) : "ols"
+             e(depvar) : "price"
+                e(cmd) : "regress"
+         e(properties) : "b V"
+            e(predict) : "regres_p"
+              e(model) : "ols"
+          e(estat_cmd) : "regress_estat"
+
+matrices:
+                  e(b) :  1 x 3
+                  e(V) :  3 x 3
+               e(beta) :  1 x 2
+
+functions:
+             e(sample)   
+
+. sreturn list
+
+macros:
+         s(width_col1) : "13"
+              s(width) : "78"
+
+
+```
+
+Now imagine that some other commands are run (eg `sum price` below), such that elements in the return lists have changed, and you wish to re-gain access to these previous elements returned from the regression command.  Rather than re-running the regression, you can simply call **cache** once again, and it will recover all previously returned elements rather than re-running the command:
+
+```s
+sum price
+
+    Variable |        Obs        Mean    Std. dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         74    6165.257    2949.496       3291      15906
+
+return list
+
+scalars:
+                  r(N) =  74
+              r(sum_w) =  74
+               r(mean) =  6165.256756756757
+                r(Var) =  8699525.974268788
+                 r(sd) =  2949.495884768919
+                r(min) =  3291
+                r(max) =  15906
+                r(sum) =  456229
+
+cache: reg price weight length
+Command was cached.  Recovering previous output.
+
+      Source |       SS           df       MS      Number of obs   =        74
+-------------+----------------------------------   F(2, 71)        =     18.91
+       Model |   220725280         2   110362640   Prob > F        =    0.0000
+    Residual |   414340116        71  5835776.28   R-squared       =    0.3476
+-------------+----------------------------------   Adj R-squared   =    0.3292
+       Total |   635065396        73  8699525.97   Root MSE        =    2415.7
+
+------------------------------------------------------------------------------
+       price | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      weight |   4.699065   1.122339     4.19   0.000     2.461184    6.936946
+      length |  -97.96031    39.1746    -2.50   0.015    -176.0722   -19.84838
+       _cons |   10386.54   4308.159     2.41   0.019     1796.316    18976.76
+------------------------------------------------------------------------------
+
+return list
+
+scalars:
+              r(level) =  95
+       r(PT_k_ctitles) =  1
+      r(PT_has_cnotes) =  0
+      r(PT_has_legend) =  0
+
+macros:
+          r(call_hash) : "_ch3875265801"
+      r(datasignature) : "74:12(71728):3831085005:1395876116"
+           r(cmd_hash) : "_ch2053929229"
+
+matrices:
+              r(table) :  9 x 3
+                 r(PT) :  3 x 6
+
+ereturn list
+
+scalars:
+                  e(N) =  74
+               e(df_m) =  2
+               e(df_r) =  71
+                  e(F) =  18.91139030456543
+                 e(r2) =  .3475630581378937
+               e(rmse) =  2415.735107421875
+                e(mss) =  220725280
+                e(rss) =  414340128
+               e(r2_a) =  .3291845619678497
+                 e(ll) =  -679.912353515625
+               e(ll_0) =  -695.712890625
+               e(rank) =  3
+
+macros:
+          e(estat_cmd) : "regress_estat"
+              e(model) : "ols"
+            e(predict) : "regres_p"
+         e(properties) : "b V"
+                e(cmd) : "regress"
+             e(depvar) : "price"
+                e(vce) : "ols"
+          e(marginsok) : "XB default"
+        e(marginsprop) : "minus"
+              e(title) : "Linear regression"
+            e(cmdline) : "regress price weight length"
+
+matrices:
+                  e(b) :  1 x 3
+                  e(V) :  3 x 3
+               e(beta) :  1 x 2
+
+functions:
+             e(sample)   
+
+```
+Note that command output is also echoed to the terminal which is loaded from a previous log.
+
+As a second example, and to see the benefits of **cache**, consider a command which may take considerable time to run, such as a bootstrap procedure.  While the first time it is cached the command will need to run, in future calls it will run essentiall instantaneously:
+
+```s
+sysuse auto
+(1978 automobile data)
+
+timer on 1
+
+cache: bootstrap, reps(5000) dots(100): reg price mpg
+Command is not cached.  Implementing and caching for future.
+(running regress on estimation sample)
+
+Bootstrap replications (5,000): .........1,000.........2,000.........3,000.........4,000.........5,000 done
+
+Linear regression                                    Number of obs =        74
+                                                     Replications  =     5,000
+                                                     Wald chi2(1)  =     16.89
+                                                     Prob > chi2   =    0.0000
+                                                     R-squared     =    0.2196
+                                                     Adj R-squared =    0.2087
+                                                     Root MSE      = 2623.6529
+
+------------------------------------------------------------------------------
+             |   Observed   Bootstrap                         Normal-based
+       price | coefficient  std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         mpg |  -238.8943   58.12175    -4.11   0.000    -352.8109   -124.9778
+       _cons |   11253.06   1378.934     8.16   0.000       8550.4    13955.72
+------------------------------------------------------------------------------
+
+timer off 1
+
+timer on 2
+
+cache: bootstrap, reps(5000) dots(100): reg price mpg
+Command was cached.  Recovering previous output.
+(running regress on estimation sample)
+
+Bootstrap replications (5,000): .........1,000.........2,000.........3,000.........4,000.........5,000 done
+
+Linear regression                                    Number of obs =        74
+                                                     Replications  =     5,000
+                                                     Wald chi2(1)  =     16.89
+                                                     Prob > chi2   =    0.0000
+                                                     R-squared     =    0.2196
+                                                     Adj R-squared =    0.2087
+                                                     Root MSE      = 2623.6529
+
+------------------------------------------------------------------------------
+             |   Observed   Bootstrap                         Normal-based
+       price | coefficient  std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         mpg |  -238.8943   58.12175    -4.11   0.000    -352.8109   -124.9778
+       _cons |   11253.06   1378.934     8.16   0.000       8550.4    13955.72
+------------------------------------------------------------------------------
+
+timer off 2
+
+timer list
+   1:     33.83 /        1 =      33.8310
+   2:      0.04 /        1 =       0.0450
+```
+
+
+## Authors
+
+**R.Andres Castaneda**  
+The World Bank  
+acastanedaa@worldbank.org
+
+**Damian Clarke**  
+The University of Chile and The University of Exeter 
+dclarke@fen.uchile.cl
+
