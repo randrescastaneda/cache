@@ -51,9 +51,10 @@ end
 program define cache_utils_clean_local, rclass
     syntax [anything(name=subcmd)], [   ///
         text(string)               ///
+        strip                    ///
         ]
 
-    local text:  subinstr local text ":" ""
+    if ("`strip'" != "") local text:  subinstr local text ":" "" 
     local text = strtrim("`text'")
     local text = stritrim("`text'")
 

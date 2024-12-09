@@ -1,12 +1,13 @@
 /* ==================================================
 project:       Stata client to cache results of other commands
-Author:        R.Andres Castaneda 
-E-email:       acastanedaa@worldbank.org
+Author:        R.Andres Castaneda & Damian Clarke
+E-email:       acastanedaa@worldbank.org 
+               dclarke4@worldbank.org / dclarke@fen.uchile.cl
 url:           
 Dependencies:  The World Bank
 ----------------------------------------------------
 Creation Date:     4 May 2023 - 09:35:43
-Modification Date:   
+Modification Date:  12 Dec 2024 - 02:06:41 
 Do-file version:    01
 References:          
 Output:             
@@ -21,25 +22,21 @@ program define cache, rclass properties(prefix)
 	//========================================================
 	//  SPLIT	
 	//========================================================
-
-
-	// I think we need to correct for commands like "cache: merge 1:1 ..." below
 	* Split the overall command, stored in `0' in a left and right part.
-	gettoken left right : 0, parse(":")
-
-
-	if ("`left'" == "")  {
-		dis "{err: make sure you follow this syntax}:"
-		dis _n "{cmd: cache {it:[subcmd] [, options]}: command}"
-		error 197
+	//gettoken left right : 0, parse(":") quotes
+	gettoken part 0 : 0, parse(" :") quotes
+	while `"`part'"' != ":" & `"`part'"' != "" {
+		local left `"`left' `part'"'
+		gettoken part 0 : 0, parse(" :") quotes
 	}
+	local right `0'
 
-	// remove first : in each part (left part should not have any)
-	cache_utils clean_local, text("`left'")
-	local left = "`r(text)'"
-
-	cache_utils clean_local, text("`right'")
-	local right = "`r(text)'"
+	// syntax update below from p. 262 of https://www.stata.com/manuals/p.pdf renders this obsolete
+	//if ("`left'" == "")  {
+	//	dis "{err: make sure you follow this syntax}:"
+	//	dis _n "{cmd: cache {it:[subcmd] [, options]}: command}"
+	//	error 197
+	//}
 
 	// Get command and properties
 	if (ustrregexm("`right'", "^([A-Za-z0-9_]+)(.*)")) {
@@ -56,13 +53,13 @@ program define cache, rclass properties(prefix)
 	* Regular syntax parsing for cache
 	local 0 : copy local left
 	syntax [anything(name=subcmd)]   ///
-	[,                   	   /// 
+	[,                   	     /// 
 		dir(string)              ///  directory to save cache (already there).  Can get a global that users set.
 		project(string)          ///  folder destined to cache, and within dir they want projects
 		prefix(string)           ///
 		noDATA                   ///
 		pause                    ///
-		clear                    ///
+		clear                    ///  
 		replace                  ///  check if this does something else
 		force                    ///  force says to re-run even if the cache is there
 	] 
@@ -124,10 +121,15 @@ program define cache, rclass properties(prefix)
 	else local logfound = 0
 
 	// Find files --------------------------
-	local files: dir "`dir'" files "`call_hash'*.dta", respectcase
-	local loadfiles = 0
+	local files: dir "`dir'" files "`call_hash'*.dta*", respectcase
+	local loadfiles  = 0
+	local loadframes = 0
 
- 	if length(`"`files'"') != 0 {
+	// Find graphs --------------------------
+	local gfiles: dir "`dir'" files "`call_hash'*.gph", respectcase
+
+
+ 	if (length(`"`files'"') != 0 | length(`"`gfiles'"') != 0) & "`force'"=="" {
 		//dis "Cache found"
 
 		// Generate frames to load returns
@@ -144,17 +146,18 @@ program define cache, rclass properties(prefix)
 			if "`rfile_name'"==".dta" {
 				local loadfiles = 1
 			}
+			else if "`rfile_name'"==".dtas" {
+				local loadframes = 1
+			}
 			else {
-			    * Extract the first letter (e, r, s)
-			    if ustrregexm("`rfile_name'", "^_([ers])_")==1 local first_letter = ustrregexs(1) 
+				cache_parsefile `rfile_name'
+			    * Save first letter (e, r, s), type (macro, matrix, scalar) and extra details
+				local first_letter = r(first_letter)
+				local type  	   = r(type)
+				local extra 	   = r(extra)
+
 				if "`first_letter'"=="r" local treturn = "return"
 				else                     local treturn = "`first_letter'return"
-
-			    * Extract the type (macros, matrix, scalars)
-			    if 	ustrregexm("`rfile_name'", "^[^_]*_[^_]*_([a-z]+)") local type = ustrregexs(1) 
-
-			    * Extract any extra details after matrix (if present)
-			    if ustrregexm("`rfile_name'", "_matrix_([A-Za-z0-9_]+)") local extra = ustrregexs(1) 
     
 				//========================================================
 				// load and export to lists
@@ -181,7 +184,10 @@ program define cache, rclass properties(prefix)
 					local extra = ""
 				}
 				else if "`type'"=="scalars"|"`type'"=="macros" {
-					//Get a list of types and names to avoid re-searching below
+					//We could consider using this to just generate a list
+					// of unsaved types and names to avoid re-searching below
+					// when moving onto scalars and macros.
+					// Otherwise, remove this else if condition
 				}
 			}
 		}	
@@ -233,16 +239,15 @@ program define cache, rclass properties(prefix)
 			local rfile_name = subinstr("`file'", "`call_hash'", "", 1)
 			if "`rfile_name'"==".dta" continue
 
-			* Extract the first letter (e, r, s)
-			if ustrregexm("`rfile_name'", "^_([ers])_")==1 local first_letter = ustrregexs(1) 
+			// extract key file details
+			cache_parsefile `rfile_name'
+			* Save first letter (e, r, s), type (macro, matrix, scalar) and extra details
+			local first_letter = r(first_letter)
+			local type  	   = r(type)
+			local extra 	   = r(extra)
+
 			if "`first_letter'"=="r" local treturn = "return"
 			else                     local treturn = "`first_letter'return"
-
-			* Extract the type (macros, matrix, scalars)
-			if 	ustrregexm("`rfile_name'", "^[^_]*_[^_]*_([a-z]+)") local type = ustrregexs(1) 
-
-			* Extract any extra details after matrix (if present)
-			if ustrregexm("`rfile_name'", "_matrix_([A-Za-z0-9_]+)") local extra = ustrregexs(1) 
     
 			if "`type'"=="scalars"|"`type'"=="macros" {
 				cwf ``type'_results'
@@ -266,38 +271,88 @@ program define cache, rclass properties(prefix)
 				}
 			}
 		}
-		cwf	`origframe'			
+		cwf	`origframe'
+		if `loadframes'==1 qui frames use "`dir'/`call_hash'.dtas", `clear' replace
+
+
+		//========================================================
+		// Export graphs and store in memory
+		//========================================================
+		foreach gfile of local gfiles {
+			local gfile_name = subinstr("`gfile'", "`call_hash'", "", 1)
+			local sname = substr(subinstr("`gfile_name'", ".gph", "", 1), 2,.)
+
+			// Load and save graph with original name
+			graph use `dir'/`call_hash'`gfile_name', name(`sname', replace)
+		}
+
 
 
 		//========================================================
 		// Print command output
 		//========================================================
 		if `logfound'==1 {
-			dis "printing output"
+			dis in red "Command was cached.  Recovering previous output."
 			type "`log'"
 		}	
-		exit	
+		exit
 	}
 
 
 	//========================================================
 	// If cache is not found 
 	//========================================================
-	* Save baseline frames before running command
+	// Save baseline frames before running command & datasignature of each
+	dis in red "Command is not cached.  Implementing and caching for future."
 	qui frames dir
 	local allframes = r(frames)
-	local allframes : subinstr local allframes " " ",", all 
+	// save signatures of each
+	foreach f of local allframes {
+		frame `f': qui datasignature
+		local sig_`f' = "`r(datasignature)'"
+	}
+
+	// Save baseline graphs before running command
+	qui graph dir, memory
+	local allgraphs = strtrim(r(list))
+
+	//If there is a graph called Graph, we will temporarily move this
+	// We can recover it later if no new graph is generated
+	// This is because otherwise it is not clear if the default graph is old or new
+	local dgexists = 0
+	tempname defaultgraph
+	cap graph copy Graph `defaultgraph'
+	if _rc==0 {
+		graph drop Graph
+		local dgexists = 1
+	}
+
+	// clear ereturn and sreturn lists that may come from previous commands
+	ereturn clear
+	sreturn clear
 
 	//Log output and then this can be printed when cached command called
 	tempname logfile
-	qui log using "`dir'/`call_hash'", name(`logfile')
+	qui log using "`dir'/`call_hash'", name(`logfile') replace
 
 	* Now, run the command on the right
-	`right'
+	capture noisily `right'
+	// If requires clear, add if clear argument is provided
+	if _rc==4&("`clear'"=="clear") {
+		// At present, a small bug. 
+		//   The above command will still show the clear error
+		//   Perhaps using describe and r(changed) offers solution
+		//     ie - add clear option, and if error occurs run without clear
+		`right' `clear'
+	}
+	else if _rc!=0 {
+		qui log close `logfile'	
+		exit
+	}
 
 	local dtasave   = 0
 	//========================================================
-	// Store results
+	// Store results (lists)
 	//========================================================
 
 	// ret list --------------
@@ -353,7 +408,7 @@ program define cache, rclass properties(prefix)
 					lab var __`j' "`name'"
 					local ++j
 				}
-				qui save "`dir'/`call_hash'_`class'_matrix_`mat'.dta"
+				qui save "`dir'/`call_hash'_`class'_matrix_`mat'.dta", replace
 				clear
 			}
 			cwf `origframe'
@@ -381,61 +436,111 @@ program define cache, rclass properties(prefix)
 				local ++j
 			}
 			//Save all scalars or macros
-			qui save "`dir'/`call_hash'_`class'_`element'.dta"
+			qui save "`dir'/`call_hash'_`class'_`element'.dta", replace
 			clear
 			cwf `origframe'
 		}
-		// Finally, deal with functions (esample probably saved as variable)
+		// Deal with functions (esample probably saved as variable)
 		//   From documentation (https://www.stata.com/manuals/rstoredresults.pdf):
 		//   Functions are stored by e-class commands only, and the only function existing is e(sample)
 		else if regexm("`element'", "functions")==1 {
 			// Based on above comment, this must be e(sample)
-			//   For now, let's save the whole dataset.  We can evaluate saving just the funcvar
-			//   If saving just funcvar, will need to do a "merge 1:1 _n" later (not clear this is faster)
 			qui gen _funcvar = e(sample)
-			qui save "`dir'/`call_hash'.dta"
-			drop _funcvar
+			qui save "`dir'/`call_hash'.dta", replace
 			local dtasave = 1
 		}
-	}	
+	}
 	return add // add results of cmd
+	if `dtasave'==1 cap drop _funcvar
 
-	// clean up storage frames
 	foreach n in scalars macros matrices {
 		frame drop ``n'_results'
 	}
 	qui log close `logfile'
 
-	// data in memory ----------
+	//========================================================
+	// Store results (data) 
+	//========================================================
 	qui datasignature 
 	local datasignature2 = "`r(datasignature)'"
 	if ("`datasignature'" != "`datasignature2'") & `dtasave'==0 {
-		dis "Data has changed, saving data"
-		qui save "`dir'/`call_hash'.dta"
-	}
-	else {
-		dis "Data has not changed or already saved"
+		//dis "Data has changed, saving data"
+		qui save "`dir'/`call_hash'.dta", replace
 	}
 
+	//========================================================
+	// Store results (frames) 
+	//========================================================
 	// data frame ----------
-	// if the the cmd returns a data frame, save it
-	// NOTE: a simple version of this just generates the list of new frames and
-	//   saves them all at once using frames save.  However, there is a risk that
-	//   a command alters a specific frame, so it is not enough to just check for
-	//   new frames.  We need to loop through all frames doing a datasignature
-	//   and then re-check the datasignature, saving if it has changed.
+	// if the the cmd returns or changes a data frame, save it
 	qui frames dir
 	local finalframes = r(frames)
-	//foreach f of local finalframes {
-	//}
+	local saveframes 
+
+	foreach f of local finalframes {
+		if `"`f'"'=="default" continue
+
+		local framecheck = 0
+		foreach oframe of local allframes {
+			if "`f'"=="`oframe'" {
+				// dis "Frame `f' existed previously" (check if changed)
+				frame `f': qui datasignature
+				local signew_`f' = "`r(datasignature)'"
+				// test if signature has changed, and if so add to save list
+				if "`signew_`f''" != "`sig_`f''" {
+					frame `f': qui describe
+					if r(k) > 0 local saveframes = "`saveframes' `f'"
+				}
+				local framecheck = 1
+				continue, break
+			}
+		}
+		if `framecheck'==0 {
+			frame `f': qui describe
+			if r(k) > 0 local saveframes = "`saveframes' `f'"
+		}
+	}
+	if "`saveframes'" != "" {
+		//dis "Saving frames: `saveframes'"
+		qui frames save "`dir'/`call_hash'.dtas", frames(`saveframes') replace
+	}
 
 	//========================================================
-	// 
+	// Store results (graphs) 
 	//========================================================
+	qui graph dir, memory
+	local finalgraphs = strtrim(r(list))
+	local newgraph = 0
+	local ngraphs: word count `allgraphs'
 
+	// Make list of original graphs for comparison
+	local graphlist
+	foreach og of local allgraphs {
+   		local graphlist `"`graphlist', "`og'""'
+	}
 
-
-
+	foreach g of local finalgraphs {
+		if `"`g'"'=="`defaultgraph'" continue
+		// if Graph is generated, this must be new
+		if `"`g'"'=="Graph" {
+			qui graph save `g' "`dir'/`call_hash'_`g'.gph", replace
+			local newgraph = 1
+			// Now, if old Graph existed, we can remove this, as it would have been saved over
+			if `dgexists'==1 {
+				graph drop `defaultgraph'
+			}
+		}
+		else if `ngraphs'==0 qui graph save `g' "`dir'/`call_hash'_`g'.gph", replace
+		else {
+			// Otherwise, save other graphs if they weren't in previous list
+			if !inlist("`g'" `graphlist') qui graph save `g' "`dir'/`call_hash'_`g'.gph", replace
+		}
+	}	
+	// Finally, if old default "Graph" existed and no new graph was made, put it back
+	if `dgexists'==1 & `newgraph'==0 {
+		graph copy `defaultgraph' Graph
+		graph drop `defaultgraph'
+	}
 
 end
 
@@ -458,6 +563,23 @@ program define cache_setdir, rclass
 	return local dir = "`dir'"
 end
 
+// Unpack saved file name like e_scalars, or r_matrix_PT
+cap program drop cache_parsefile
+program define cache_parsefile, rclass
+	syntax anything(name=fn)
+
+	* Extract the first letter (e, r, s)
+	if ustrregexm("`fn'", "^_([ers])_")==1 local first_letter = ustrregexs(1)
+	return local first_letter = "`first_letter'"
+
+	* Extract the type (macros, matrix, scalars)
+	if 	ustrregexm("`fn'", "^[^_]*_[^_]*_([a-z]+)") local type = ustrregexs(1) 
+	return local type = "`type'"
+
+	* Extract any extra details after matrix (if present)
+	if ustrregexm("`fn'", "_matrix_([A-Za-z0-9_]+)") local extra = ustrregexs(1) 
+	return local extra = "`extra'"
+end
 
 // ereturn program
 cap program drop cache_ereturn
@@ -487,12 +609,10 @@ exit
 ><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
 
 Notes:
-1a. What shall we do with n-class commands that don't alter previous return lists (eg dis "Hello world!")
-1b. In general, this is a point for xreturn with previous yreturns issued where x neq y.  A solution is to clear return, ereturn and sreturn prior to running...
-2. Need to build in frame caching (ideas, or just looped data signature)
+1. Add in option so that previous returns, ereturns, sreturns can be maintained if desired when command is of different type
+2. Need to build in temporary caching (eg only while session lasts, using tempfiles or frames instead of dtas)
 3. Need to build in extended functions such as clean
-4. Need to refactorize heavily
-
+4. Need to refactorize
 
 Version Control:
 

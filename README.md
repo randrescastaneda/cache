@@ -1,4 +1,4 @@
-# cache &ndash A Stata package to cache results of other commands
+# cache &ndash; A Stata package to cache results of other commands
 
 **cache** is a Stata program which allows for the full output and returned elements of commands to be saved (cached), and reloaded in the future without re-running the command. When cache is used, it will check if a command has previously been cached by the user, and if so reload all elements returned by the command, along with command output, without re-running the command itself.  Otherwise, if no previously cached result for the command exists, **cache** will run the command, and ceche all output and returns for future uses.  
 
@@ -18,23 +18,24 @@ For examples, refer to the Example section below.
 cache [subcommand, options] : anycommand 
 ```
 
-where optional sub-commands (currently work in progress) are:
+where optional sub-commands ($${\color{red}currently work in progress}$$) are:
 
 + clean
 + list
 
-and options are:
+and options ($${\color{red}those with ** currently work in progress}$$) are:
 
 + dir(string): Specifies the directory where cached contents of commands will be saved to be restored later.  If not specified, a subdirectory of the current working directory named `_cache` is used by default.
-+ project(string):  Allows for sub-folders within the cache directory if further control of cached contents is desired.
++ $${\color{red}**$$ project(string):  Allows for sub-folders within the cache directory if further control of cached contents is desired.
 + prefix(string): By default, all cached contents of a command will be saved with a prefix of `_ch` followed by the hash of the command as typed, along with the data signature of data in memory.  The prefix option will replace `_ch` with the indicated string
-+ nodata: If `nodata` is specified, cache will save all command returns, but will not save data if any changes in data are detected.  
++ $${\color{red}**$$ nodata: If `nodata` is specified, cache will save all command returns, but will not save data if any changes in data are detected.  
 + clear: Allows command implementation to proceed even if this would unsaved changes in data (similar, for example, to `use, clear`) 
 + replace: Forces cache to re-run the command and re-cache results, even if a previously cached version of command output has been found.  Such an example may be useful if commands are re-issued and command behaviour has changed.
 
 
 
 ## Examples
+### A Basic Example 
 As a first example, consider a regression using Stata's auto dataset.  Provided this has not previously been cached, **cache** will run the command as normal, with elements saved into the ereturn, return and sreturn lists:
 
 ```s
@@ -207,6 +208,7 @@ functions:
 ```
 Note that command output is also echoed to the terminal which is loaded from a previous log.
 
+### An Example with Time Tests
 As a second example, and to see the benefits of **cache**, consider a command which may take considerable time to run, such as a bootstrap procedure.  While the first time it is cached the command will need to run, in future calls it will run essentiall instantaneously:
 
 ```s
@@ -269,6 +271,60 @@ timer list
    1:     33.83 /        1 =      33.8310
    2:      0.04 /        1 =       0.0450
 ```
+
+### An Example with Graphs
+Finally, note that this also works for commands that issue multiple graphs.  As an example, consider the following command which produces two graphs (this requires sdid from the SSC).  First, we will run the command, and examine graphs in memory (graphs will also be produced in interactive versions of Stata).
+```s
+webuse set www.damianclarke.net/stata/
+
+webuse prop99_example.dta, clear
+
+cache: sdid packspercapita state year treated, vce(placebo) seed(1213) graph g1on
+Command is not cached.  Implementing and caching for future.
+Placebo replications (50). This may take some time.
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5
+..................................................     50
+
+
+Synthetic Difference-in-Differences Estimator
+
+-----------------------------------------------------------------------------
+packsperca~a |     ATT     Std. Err.     t      P>|t|    [95% Conf. Interval]
+-------------+---------------------------------------------------------------
+     treated | -15.60383    9.87941    -1.58    0.114   -34.96712     3.75946
+-----------------------------------------------------------------------------
+95% CIs and p-values are based on large-sample approximations.
+Refer to Arkhangelsky et al., (2021) for theoretical derivations.
+
+graph dir
+    g1_1989  g2_1989
+```
+Now, we will drop graphs, and re-run with **cache** and confirm that the command is printed from **cache** and graphs have been re-loaded in memory (and re-displayed in interactive versions of Stata).
+
+```s
+graph drop _all
+
+cache: sdid packspercapita state year treated, vce(placebo) seed(1213) graph g1on
+Command was cached.  Recovering previous output.
+Placebo replications (50). This may take some time.
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5
+..................................................     50
+
+
+Synthetic Difference-in-Differences Estimator
+
+-----------------------------------------------------------------------------
+packsperca~a |     ATT     Std. Err.     t      P>|t|    [95% Conf. Interval]
+-------------+---------------------------------------------------------------
+     treated | -15.60383    9.87941    -1.58    0.114   -34.96712     3.75946
+-----------------------------------------------------------------------------
+95% CIs and p-values are based on large-sample approximations.
+Refer to Arkhangelsky et al., (2021) for theoretical derivations.
+
+graph dir
+    g1_1989  g2_1989
+```
+
 
 
 ## Authors
