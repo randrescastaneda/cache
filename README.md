@@ -18,17 +18,17 @@ For examples, refer to the Example section below.
 cache [subcommand, options] : anycommand 
 ```
 
-where optional sub-commands ($${\color{red}currently work in progress}$$) are:
+where optional sub-commands ($${\color{red}**}$$ currently work in progress) are:
 
 + clean
 + list
 
-and options ($${\color{red}those with ** currently work in progress}$$) are:
+and options (those with $${\color{red}**}$$ currently work in progress) are:
 
 + dir(string): Specifies the directory where cached contents of commands will be saved to be restored later.  If not specified, a subdirectory of the current working directory named `_cache` is used by default.
-+ $${\color{red}**$$ project(string):  Allows for sub-folders within the cache directory if further control of cached contents is desired.
++ $${\color{red}**}$$ project(string):  Allows for sub-folders within the cache directory if further control of cached contents is desired.
 + prefix(string): By default, all cached contents of a command will be saved with a prefix of `_ch` followed by the hash of the command as typed, along with the data signature of data in memory.  The prefix option will replace `_ch` with the indicated string
-+ $${\color{red}**$$ nodata: If `nodata` is specified, cache will save all command returns, but will not save data if any changes in data are detected.  
++ $${\color{red}**}$$ nodata: If `nodata` is specified, cache will save all command returns, but will not save data if any changes in data are detected.  
 + clear: Allows command implementation to proceed even if this would unsaved changes in data (similar, for example, to `use, clear`) 
 + replace: Forces cache to re-run the command and re-cache results, even if a previously cached version of command output has been found.  Such an example may be useful if commands are re-issued and command behaviour has changed.
 
