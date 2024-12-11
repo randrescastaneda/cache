@@ -22,7 +22,7 @@ return local files = "`as'"
 end
 
 if ("`c(username)'" == "wb384996") {
-    cd "c:/Users/`c(username)'/OneDrive - WBG/WorldBank/DECDG/PIP/pip"
+    cd "C:\Users\wb384996\OneDrive - WBG\ado\myados\cache"
 }
 else {
     // Damian, add your path here.. 
@@ -49,7 +49,7 @@ local toins  "`as';`hs';`ms';`ds';`dtas'"
 disp "`toins'"
 
 
-make pip, replace toc pkg                                  ///  readme
+make cache, replace toc pkg                                  ///  readme
 	version(0.0.0.9000)                                   ///
     license("MIT")                                         ///
     author("R.Andres Castaneda, Damian Clarke")            ///

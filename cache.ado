@@ -8,9 +8,7 @@ Dependencies:  The World Bank
 ----------------------------------------------------
 Creation Date:     4 May 2023 - 09:35:43
 Modification Date:  12 Dec 2024 - 02:06:41 
-Do-file version:    01
-References:          
-Output:             
+Do-file version:    0.0.0.9000
 ==================================================*/
 
 /*==================================================
@@ -628,3 +626,7 @@ Version Control:
 	// 	st_local("dir", cachedir)
 	// }
 	*##e
+
+*! version 0.0.0.9000  <2024dec11>
+*! -- First working version
+
