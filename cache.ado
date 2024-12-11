@@ -292,7 +292,7 @@ program define cache, rclass properties(prefix)
 		// Print command output
 		//========================================================
 		if `logfound'==1 {
-			dis in red "Command was cached.  Recovering previous output."
+			dis "{res}Command was cached.  Recovering previous output."
 			type "`log'"
 		}	
 		exit
@@ -303,7 +303,7 @@ program define cache, rclass properties(prefix)
 	// If cache is not found 
 	//========================================================
 	// Save baseline frames before running command & datasignature of each
-	dis in red "Command is not cached.  Implementing and caching for future."
+	dis "{result: Note:}{text: Command is not cached. Implementing cache for future.}"
 	qui frames dir
 	local allframes = r(frames)
 	// save signatures of each
