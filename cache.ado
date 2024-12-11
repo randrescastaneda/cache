@@ -164,7 +164,7 @@ program define cache, rclass properties(prefix)
 				//========================================================
 				if "`type'"=="matrix" {
 				    cwf	`matrices_results'
-					qui use `dir'/`call_hash'`rfile_name', clear
+					qui use "`dir'/`call_hash'`rfile_name'", clear
 					qui ds _rownames, not
 					local savvars = r(varlist)
 					mkmat `savvars', matrix("`extra'") rownames(_rownames)
@@ -208,7 +208,7 @@ program define cache, rclass properties(prefix)
 				if `estpost' == 1 {
 					if `loadfiles' == 1 {
 						cwf	`origframe'
-						qui use `dir'/`call_hash', clear
+						qui use "`dir'/`call_hash'", clear
 						ereturn post b V, esample(_funcvar) 
 					}
 					else {
@@ -253,7 +253,7 @@ program define cache, rclass properties(prefix)
 				cwf ``type'_results'
 				clear
 				//Import scalar or macro file
-				use `dir'/`call_hash'`rfile_name', clear
+				use "`dir'/`call_hash'`rfile_name'", clear
 				qui count
 				if r(N)==0 continue 
 				foreach num of numlist 1(1)`r(N)' {
@@ -283,7 +283,7 @@ program define cache, rclass properties(prefix)
 			local sname = substr(subinstr("`gfile_name'", ".gph", "", 1), 2,.)
 
 			// Load and save graph with original name
-			graph use `dir'/`call_hash'`gfile_name', name(`sname', replace)
+			graph use "`dir'/`call_hash'`gfile_name'", name(`sname', replace)
 		}
 
 
