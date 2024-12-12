@@ -1,0 +1,9 @@
+v 0.0.0.9000
+d 'CACHE': Suite to Cache output of Stata commands
+d 
+d Distribution-Date:   20241211
+d License: MIT
+d 
+F cache.ado
+F cache_hash.ado
+F cache_utils.ado
