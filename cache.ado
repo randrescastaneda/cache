@@ -18,6 +18,45 @@ program define cache, rclass properties(prefix)
 	version 16.1
 
 	//========================================================
+	//  Parse for single command clean or list
+	//========================================================
+	if regexm("`0'", "^clean") {
+		// Unpack locations for cleaning
+		syntax [anything(name=subcmd)], [dir(string) project(string) *]
+
+		if ("`dir'" == "") {
+			cache_setdir
+			local dir = "`r(dir)'"
+		}
+		if ("`project'" != "") {
+			local dir = "`dir'/`project'"
+		}
+
+		//clean cache
+		cache_clean clean, dir("`dir'") 
+		exit
+	}
+	if regexm("`0'", "^list") {
+		//"listing cache"
+		
+		// Unpack locations for list file
+		syntax [anything(name=subcmd)], [dir(string) project(string) *]
+
+		if ("`dir'" == "") {
+			cache_setdir
+			local dir = "`r(dir)'"
+		}
+		if ("`project'" != "") {
+			local dir = "`dir'/`project'"
+		}
+
+		//clean cache
+		cache_list print, dir("`dir'") 
+		exit
+	}
+
+
+	//========================================================
 	//  SPLIT	
 	//========================================================
 	* Split the overall command, stored in `0' in a left and right part.
@@ -52,11 +91,12 @@ program define cache, rclass properties(prefix)
 	local 0 : copy local left
 	syntax [anything(name=subcmd)]   ///
 	[,                   	     /// 
-		dir(string)              ///  directory to save cache (already there).  Can get a global that users set.
-		project(string)          ///  folder destined to cache, and within dir they want projects
-		prefix(string)           ///
-		noDATA                   ///
+		dir(string)              ///  
+		project(string)          ///  
+		prefix(string)           /// 
+		noDATA                   /// 
 		pause                    ///
+		KEEPall                  ///  does not clear previous returns  
 		clear                    ///  
 		replace                  ///  check if this does something else
 		force                    ///  force says to re-run even if the cache is there
@@ -77,14 +117,24 @@ program define cache, rclass properties(prefix)
 		cache_setdir
 		local dir = "`r(dir)'"
 	}
-
-	if ("`project'" == "") {
-		local project = "_default"
+	else {
+		mata : st_numscalar("direxists", direxists("`dir'"))
+		if direxists==0 {
+			dis "The cache directory does not exist."
+			exit 693
+		}
 	}
 
-	// Add project to dir... I still don't know what the best way is
-	// probably local dir = "`dir'" + "\`project'"
-	// makedir "`dir'"
+	if ("`project'" != "") {
+		local dir = "`dir'/`project'"
+		cap mata: if(!direxists("`dir'")) mkdir("`dir'");;
+		if _rc!=0 {
+			dis "Trying to generate directory `dir'."
+			dis "The project directory does not exist and could not be created."
+			dis "Ensure that this directory is located within the main cache directory."
+			exit 693
+		}
+	}
 
 	//========================================================
 	// HASHING and SIGNATURE
@@ -96,12 +146,10 @@ program define cache, rclass properties(prefix)
 	return local cmd_hash = "`cmd_hash'"
 
 	//  Data signature --------------------------
-	if ("`data'" == "") {
-		qui datasignature 
-		local datasignature = "`r(datasignature)'"
-		return local datasignature = "`datasignature'"
-	}
-
+	qui datasignature 
+	local datasignature = "`r(datasignature)'"
+	return local datasignature = "`datasignature'"
+	
 	//  combine both parts --------------------------
 	cache_hash get,  cmd_call("`cmd_hash'`datasignature'") prefix("`prefix'")
 	local call_hash = "`r(chhash)'"
@@ -326,12 +374,18 @@ program define cache, rclass properties(prefix)
 	}
 
 	// clear ereturn and sreturn lists that may come from previous commands
-	ereturn clear
-	sreturn clear
+	if "`keepall'"=="" ereturn clear
+	if "`keepall'"=="" sreturn clear
 
 	//Log output and then this can be printed when cached command called
 	tempname logfile
 	qui log using "`dir'/`call_hash'", name(`logfile') replace
+
+	//Write current command to cache log for future reference if consulted
+	file open cachedcommands using "`dir'/cached_commands.txt", write append
+	file write cachedcommands _n "`right'" _n
+ 	file close cachedcommands 
+
 
 	* Now, run the command on the right
 	capture noisily `right'
@@ -441,7 +495,7 @@ program define cache, rclass properties(prefix)
 		// Deal with functions (esample probably saved as variable)
 		//   From documentation (https://www.stata.com/manuals/rstoredresults.pdf):
 		//   Functions are stored by e-class commands only, and the only function existing is e(sample)
-		else if regexm("`element'", "functions")==1 {
+		else if regexm("`element'", "functions")==1 & "`data'"=="" {
 			// Based on above comment, this must be e(sample)
 			qui gen _funcvar = e(sample)
 			qui save "`dir'/`call_hash'.dta", replace
@@ -459,7 +513,8 @@ program define cache, rclass properties(prefix)
 	//========================================================
 	// Store results (data) 
 	//========================================================
-	qui datasignature 
+        if "`data'"=="" { 
+        qui datasignature 
 	local datasignature2 = "`r(datasignature)'"
 	if ("`datasignature'" != "`datasignature2'") & `dtasave'==0 {
 		//dis "Data has changed, saving data"
@@ -502,6 +557,7 @@ program define cache, rclass properties(prefix)
 		//dis "Saving frames: `saveframes'"
 		qui frames save "`dir'/`call_hash'.dtas", frames(`saveframes') replace
 	}
+        }
 
 	//========================================================
 	// Store results (graphs) 
@@ -553,7 +609,10 @@ program define cache_setdir, rclass
 	mata {
 			cachedir = pwd() + "_cache"
 			if (!direxists(cachedir)) {
-				mkdir(cachedir)
+                            mkdir(cachedir)
+                            fh = fopen(cachedir+"/cached_commands.txt", "w")
+                            fwrite(fh, "Cached commands: ")
+                            fclose(fh)
 			}
 			st_local("dir", cachedir)
 		}
@@ -607,10 +666,7 @@ exit
 ><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
 
 Notes:
-1. Add in option so that previous returns, ereturns, sreturns can be maintained if desired when command is of different type
-2. Need to build in temporary caching (eg only while session lasts, using tempfiles or frames instead of dtas)
-3. Need to build in extended functions such as clean
-4. Need to refactorize
+1. Could build in temporary caching (eg only while session lasts, using tempfiles or frames instead of dtas) -- note that this could be done by using tempdir
 
 Version Control:
 
