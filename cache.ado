@@ -390,7 +390,7 @@ program define cache, rclass properties(prefix)
 	* Now, run the command on the right
 	capture noisily `right'
 	// If requires clear, add if clear argument is provided
-	if _rc==4&("`clear'"=="clear") {
+	if _rc==4 & ("`clear'"=="clear") {
 		// At present, a small bug. 
 		//   The above command will still show the clear error
 		//   Perhaps using describe and r(changed) offers solution
@@ -692,4 +692,7 @@ Version Control:
 
 *! version 0.0.0.9000  <2024dec11>
 *! -- First working version
+*! version 0.0.0.9001  <2025jan13>
+*! -- incorporate subcommands for clean and list 
+*! -- add global cache_dir for users who want to set it up in their profile.do . Also, display commands as smcl
 

@@ -264,7 +264,7 @@ following in {cmd: r()}:
 {marker authors}{...}
 {title:Authors}
 
-{p 4 4 4}R.Andres Castaneda, The World Bank{p_end}
+{p 4 4 4}R.Andres Castaneda, Development Data Group, Development Economics, The World Bank{p_end}
 {p 6 6 4}Email: {browse "mailto: acastanedaa@worldbank.org":  acastanedaa@worldbank.org}{p_end}
 {p 6 6 4}GitHub:{browse "https://github.com/randrescastaneda": randrescastaneda }{p_end}
 
