@@ -383,7 +383,7 @@ program define cache, rclass properties(prefix)
 
 	//Write current command to cache log for future reference if consulted
 	file open cachedcommands using "`dir'/cached_commands.txt", write append
-	file write cachedcommands _n "`right'" _n
+	file write cachedcommands _n `". {cmd:`right'}"'  _n
  	file close cachedcommands 
 
 
@@ -607,12 +607,19 @@ end
 cap program drop cache_setdir
 program define cache_setdir, rclass
 	mata {
-			cachedir = pwd() + "_cache"
+			// Check if global macro exiss. If it does, 
+			// use it as cachedir. Otherwise, use pwd()
+			if (st_global("cache_dir") != "") {
+				cachedir = st_global("cache_dir") + "/_cache"
+			}
+			else {
+				cachedir = pwd() + "_cache"
+			}
 			if (!direxists(cachedir)) {
-                            mkdir(cachedir)
-                            fh = fopen(cachedir+"/cached_commands.txt", "w")
-                            fwrite(fh, "Cached commands: ")
-                            fclose(fh)
+				mkdir(cachedir)
+				fh = fopen(cachedir+"/cached_commands.txt", "w")
+				fwrite(fh, "{bf:{res: Cached commands}}: ")
+				fclose(fh)
 			}
 			st_local("dir", cachedir)
 		}

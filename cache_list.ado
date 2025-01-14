@@ -37,7 +37,7 @@ program define cache_list, rclass
         }
 
         //list all cached command history
-        type "`dir'/cached_commands.txt"
+        type "`dir'/cached_commands.txt",  smcl 
 
         //Exit
         return add
