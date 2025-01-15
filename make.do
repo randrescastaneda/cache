@@ -50,14 +50,14 @@ disp "`toins'"
 
 
 make cache, replace toc pkg                                  ///  readme
-	version(0.0.0.9000)                                   ///
+	version(0.0.0.9001)                                   ///
     license("MIT")                                         ///
-    author("R.Andres Castaneda, Damian Clarke")            ///
-    affiliation("The World Bank, The University of Chile and The University of Exeter")                          ///
-    email("acastanedaa@worldbank.org, dclarke@fen.uchile.cl")                     ///
+   author(`""R.Andres Castaneda" "Damian Clarke""')                       ///
+    affiliation(`" "The World Bank" "University of Chile & University of Exeter""')                                                         ///
+    email(`"acastanedaa@worldbank.org" "dclarke4@worldbank.org, dclarke@fen.uchile.cl""')                     ///
     url("")                                                ///
     title("Suite to Cache output of Stata commands") ///
-    description("")        ///
+    description("A program to cache all other Stata commands")        ///
     install("`toins'")                                     ///
     ancillary("")                                                         
 

@@ -1,6 +1,8 @@
-v 0.0.0.9000
-d Materials by R.Andres Castaneda, Damian Clarke
-d The World Bank, The University of Chile and The University of Exeter
-d acastanedaa@worldbank.org, dclarke@fen.uchile.cl
+v 0.0.0.9001
+d Authors:
+d  -- R.Andres Castaneda, The World Bank (acastanedaa@worldbank.org")
+d  -- Damian Clarke, University of Chile & University of Exeter (dclarke4@worldbank.org, dclarke@fen.uchile.cl)
+
+d 'cache': A program to cache all other Stata commands
 
 p cache
