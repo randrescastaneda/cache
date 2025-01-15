@@ -18,19 +18,20 @@ For examples, refer to the Example section below.
 cache [subcommand, options] : anycommand 
 ```
 
-where optional sub-commands ($${\color{red}**}$$ currently work in progress) are:
+where optional sub-commands are:
 
 + clean
 + list
 
-and options (those with $${\color{red}**}$$ currently work in progress) are:
+and options are:
 
 + dir(string): Specifies the directory where cached contents of commands will be saved to be restored later.  If not specified, a subdirectory of the current working directory named `_cache` is used by default.
-+ $${\color{red}**}$$ project(string):  Allows for sub-folders within the cache directory if further control of cached contents is desired.
++ project(string):  Allows for sub-folders within the cache directory if further control of cached contents is desired.
 + prefix(string): By default, all cached contents of a command will be saved with a prefix of `_ch` followed by the hash of the command as typed, along with the data signature of data in memory.  The prefix option will replace `_ch` with the indicated string
-+ $${\color{red}**}$$ nodata: If `nodata` is specified, cache will save all command returns, but will not save data if any changes in data are detected.  
++ nodata: If `nodata` is specified, cache will save all command returns, but will not save data if any changes in data are detected.  
 + clear: Allows command implementation to proceed even if this would unsaved changes in data (similar, for example, to `use, clear`) 
 + replace: Forces cache to re-run the command and re-cache results, even if a previously cached version of command output has been found.  Such an example may be useful if commands are re-issued and command behaviour has changed.
++ keepall: Indicates that elements stored by previous commands in e(return) and s(return) lists should not be cleared prior to invoking the command requested with cache, allowing for their future use.
 
 
 
@@ -325,6 +326,31 @@ graph dir
     g1_1989  g2_1989
 ```
 
+### Use of cache sub-commands
+Based on the above commands, we can examine sub-commands within cache.  Below we use `cache list` which provides a list of all currently cached commands.
+
+```{s}
+. cache list
+Cached commands: 
+reg price weight length
+
+reg price weight length
+
+bootstrap, reps(5000) dots(100): reg price mpg
+
+sdid packspercapita state year treated, vce(placebo) seed(1213) graph g1on
+```
+
+We can also use `cache clean` to remove all cached commands and related saved elements, and confirm that no commands are stored in the cache:
+
+```{s}
+. cache clean
+Warning: This will delete all files within ~/home/_cache
+Do you want to continue? (y/n): . y
+
+. cache list
+Cached commands: 
+```
 
 
 ## Authors
