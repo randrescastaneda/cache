@@ -156,13 +156,13 @@ as the use of e(sample) will not be available.
 output and results will be returned, but updates to data will not be produced.
 
 {phang}
-{opt datacheck(string)} By default {cmd:cache} tests data in memory and the command syntex,
+{opt datacheck(string)} By default {cmd:cache} tests data in memory and the command syntax,
 and determines that a command has been cached if data in memory is identical and the command as
 typed is identical.  However, at times external data files may be called which have identical names,
 but altered contents.  In cases such as this, {opt datacheck} can be used to indicate that {cmd:cache}
 should also ensure that any external data files necessary for the command are also included when 
-testing storing a unique command identifier, or checking whether an identical command has previously
-been hashed.  As many data files can be indicated in {opt datacheck} as required, and the name of each
+generating a unique command identifier, or checking whether an identical command has previously
+been cached.  As many data files can be indicated in {opt datacheck} as desired, and the name of each
 Stata data file should simply be separated by white space.
 
 {phang}
