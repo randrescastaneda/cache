@@ -43,8 +43,10 @@
   if further organisation of cached commands is desired{p_end}
 {synopt :{opt prefix(string)}}Defines a prefix for all saved elements of a command; 
   default is _ch{p_end}
-{synopt :{opt nodata}}does not cache data if changes occur in data{p_end}
-{synopt :{opt clear}}allows command to proceed even if this saves over data currently in memory{p_end}
+{synopt :{opt nodata}}Does not cache data if changes occur in data{p_end}
+{synopt :{opt datacheck(string)}}Allows for data on disk to be checked to ensure command uniqueness{p_end}
+{synopt :{opt framecheck(string)}}Allows for additional frames to be checked to ensure command uniqueness{p_end}
+{synopt :{opt clear}}Allows command to proceed even if this saves over data currently in memory{p_end}
 {synopt :{opt replace}}Re-runs command and saves over previously cached version{p_end}
 {synopt :{opt keep:all}}Does not clear previous ereturn and sreturn lists, permitting future use{p_end}
 {synoptline}
@@ -152,6 +154,21 @@ as the use of e(sample) will not be available.
 
 {pmore} This option should be used with care, as in future calls to {cmd:cache} all command
 output and results will be returned, but updates to data will not be produced.
+
+{phang}
+{opt datacheck(string)} By default {cmd:cache} tests data in memory and the command syntex,
+and determines that a command has been cached if data in memory is identical and the command as
+typed is identical.  However, at times external data files may be called which have identical names,
+but altered contents.  In cases such as this, {opt datacheck} can be used to indicate that {cmd:cache}
+should also ensure that any external data files necessary for the command are also included when 
+testing storing a unique command identifier, or checking whether an identical command has previously
+been hashed.  As many data files can be indicated in {opt datacheck} as required, and the name of each
+Stata data file should simply be separated by white space.
+
+{phang}
+{opt framecheck(string)} Allows for identical behaviour as in {opt datacheck}, but now by testing
+the precise contents of any frames indicated in {opt framecheck}.  As many frames can be indicated 
+in {opt framecheck} as desired, and the name of each frame should simply be separated by white space.
 
 {phang}
 {opt clear} Allows command implementation to proceed even if this would unsaved changes in 
