@@ -25,7 +25,7 @@ program define cache, rclass properties(prefix)
 		syntax [anything(name=subcmd)], [dir(string) project(string) *]
 
 		if ("`dir'" == "") {
-			cache_setdir
+			qui cache_setdir
 			local dir = "`r(dir)'"
 		}
 		if ("`project'" != "") {
@@ -43,7 +43,7 @@ program define cache, rclass properties(prefix)
 		syntax [anything(name=subcmd)], [dir(string) project(string) *]
 
 		if ("`dir'" == "") {
-			cache_setdir
+			qui cache_setdir
 			local dir = "`r(dir)'"
 		}
 		if ("`project'" != "") {
@@ -95,6 +95,8 @@ program define cache, rclass properties(prefix)
 		project(string)          ///  
 		prefix(string)           /// 
 		noDATA                   /// 
+		datacheck(string)        ///  
+		framecheck(string)       /// 
 		pause                    ///
 		KEEPall                  ///  does not clear previous returns  
 		clear                    ///  
@@ -114,7 +116,7 @@ program define cache, rclass properties(prefix)
 
 	// Set dir if not selected by user
 	if ("`dir'" == "") {
-		cache_setdir
+		qui cache_setdir
 		local dir = "`r(dir)'"
 	}
 	else {
@@ -150,6 +152,46 @@ program define cache, rclass properties(prefix)
 	local datasignature = "`r(datasignature)'"
 	return local datasignature = "`datasignature'"
 	
+	//  Incorporate additional data -------------------------
+	if (`"`datacheck'"' != "") {
+		tokenize `"`datacheck'"'
+
+		//dsignatures will hold data signatures of all added datasets
+		local dsignatures
+		preserve
+		while `"`1'"' != "" {
+			qui use `"`1'"'
+
+			qui datasignature 
+			local dsig = "`r(datasignature)'"
+			local dsignatures = "`dsignatures'_`dsig'"
+
+			macro shift
+		}
+		restore
+		return local datasignature = "`datasignature'`dsignatures'"
+	}
+
+	//  Incorporate additional frames -----------------------
+	if ("`framecheck'" != "") {
+		tokenize `"`framecheck'"'
+
+		//fsignatures will hold data signatures of all added frames
+		local fsignatures
+		qui pwf
+		local cframe = r(currentframe)
+		while `"`1'"' != "" {
+			cwf `1'
+			qui datasignature 
+			local fsig = "`r(datasignature)'"
+			local fsignatures = "`fsignatures'_`fsig'"
+
+			macro shift
+		}
+		cwf `cframe'
+		return local datasignature = "`datasignature'`fsignatures'"
+	}
+
 	//  combine both parts --------------------------
 	cache_hash get,  cmd_call("`cmd_hash'`datasignature'") prefix("`prefix'")
 	local call_hash = "`r(chhash)'"
@@ -533,7 +575,7 @@ program define cache, rclass properties(prefix)
 	foreach f of local finalframes {
 		if `"`f'"'=="default" continue
 
-		local framecheck = 0
+		local framescheck = 0
 		foreach oframe of local allframes {
 			if "`f'"=="`oframe'" {
 				// dis "Frame `f' existed previously" (check if changed)
@@ -544,11 +586,11 @@ program define cache, rclass properties(prefix)
 					frame `f': qui describe
 					if r(k) > 0 local saveframes = "`saveframes' `f'"
 				}
-				local framecheck = 1
+				local framescheck = 1
 				continue, break
 			}
 		}
-		if `framecheck'==0 {
+		if `framescheck'==0 {
 			frame `f': qui describe
 			if r(k) > 0 local saveframes = "`saveframes' `f'"
 		}
@@ -557,7 +599,7 @@ program define cache, rclass properties(prefix)
 		//dis "Saving frames: `saveframes'"
 		qui frames save "`dir'/`call_hash'.dtas", frames(`saveframes') replace
 	}
-        }
+	}
 
 	//========================================================
 	// Store results (graphs) 
