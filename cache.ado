@@ -169,6 +169,7 @@ program define cache, rclass properties(prefix)
 			macro shift
 		}
 		restore
+		local datasignature = "`datasignature'`dsignatures'"
 		return local datasignature = "`datasignature'`dsignatures'"
 	}
 
@@ -189,6 +190,7 @@ program define cache, rclass properties(prefix)
 			macro shift
 		}
 		cwf `cframe'
+		local datasignature = "`datasignature'`fsignatures'"
 		return local datasignature = "`datasignature'`fsignatures'"
 	}
 
@@ -298,6 +300,7 @@ program define cache, rclass properties(prefix)
 						cwf	`origframe'
 						qui use "`dir'/`call_hash'", clear
 						ereturn post b V, esample(_funcvar) 
+						local loadfiles = 0
 					}
 					else {
 						ereturn post b V
@@ -360,6 +363,7 @@ program define cache, rclass properties(prefix)
 			}
 		}
 		cwf	`origframe'
+		if `loadfiles' == 1 qui use "`dir'/`call_hash'", clear
 		if `loadframes'==1 qui frames use "`dir'/`call_hash'.dtas", `clear' replace
 
 
@@ -397,7 +401,13 @@ program define cache, rclass properties(prefix)
 	// save signatures of each
 	foreach f of local allframes {
 		frame `f': qui datasignature
-		local sig_`f' = "`r(datasignature)'"
+
+		// Work with edge case: frames of 31 or 32 characters
+		if length("`f'")>30 {
+			mata: st_local("fname", strofreal(hash1("`f'", ., 2), "%12.0gc"))
+		}
+		else local fname = "`f'"
+		local s`fname' = "`r(datasignature)'"
 	}
 
 	// Save baseline graphs before running command
@@ -555,50 +565,57 @@ program define cache, rclass properties(prefix)
 	//========================================================
 	// Store results (data) 
 	//========================================================
-        if "`data'"=="" { 
+    if "`data'"=="" { 
         qui datasignature 
-	local datasignature2 = "`r(datasignature)'"
-	if ("`datasignature'" != "`datasignature2'") & `dtasave'==0 {
-		//dis "Data has changed, saving data"
-		qui save "`dir'/`call_hash'.dta", replace
-	}
+		local datasignature2 = "`r(datasignature)'"
+		if ("`datasignature'" != "`datasignature2'") & `dtasave'==0 {
+			//dis "Data has changed, saving data"
+			qui save "`dir'/`call_hash'.dta", replace
+		}
 
-	//========================================================
-	// Store results (frames) 
-	//========================================================
-	// data frame ----------
-	// if the the cmd returns or changes a data frame, save it
-	qui frames dir
-	local finalframes = r(frames)
-	local saveframes 
+		//========================================================
+		// Store results (frames) 
+		//========================================================
+		// data frame ----------
+		// if the the cmd returns or changes a data frame, save it
+		qui frames dir
+		local finalframes = r(frames)
+		local saveframes 
 
-	foreach f of local finalframes {
-		if `"`f'"'=="default" continue
+		foreach f of local finalframes {
+			if `"`f'"'=="default" continue
 
-		local framescheck = 0
-		foreach oframe of local allframes {
-			if "`f'"=="`oframe'" {
-				// dis "Frame `f' existed previously" (check if changed)
-				frame `f': qui datasignature
-				local signew_`f' = "`r(datasignature)'"
-				// test if signature has changed, and if so add to save list
-				if "`signew_`f''" != "`sig_`f''" {
-					frame `f': qui describe
-					if r(k) > 0 local saveframes = "`saveframes' `f'"
+			local framescheck = 0
+			foreach oframe of local allframes {
+				if "`f'"=="`oframe'" {
+					// dis "Frame `f' existed previously" (check if changed)
+					frame `f': qui datasignature
+
+					// Work with edge case: frames of 31 or 32 characters
+					if length("`f'")>30 {
+						mata: st_local("fname", strofreal(hash1("`f'", ., 2), "%12.0gc"))
+					}
+					else local fname = "`f'"
+
+					local t`fname' = "`r(datasignature)'"
+					// test if signature has changed, and if so add to save list
+					if "`t`fname''" != "`s`fname''" {
+						frame `f': qui describe
+						if r(k) > 0 local saveframes = "`saveframes' `f'"
+					}
+					local framescheck = 1
+					continue, break
 				}
-				local framescheck = 1
-				continue, break
+			}
+			if `framescheck'==0 {
+				frame `f': qui describe
+				if r(k) > 0 local saveframes = "`saveframes' `f'"
 			}
 		}
-		if `framescheck'==0 {
-			frame `f': qui describe
-			if r(k) > 0 local saveframes = "`saveframes' `f'"
+		if "`saveframes'" != "" {
+			//dis "Saving frames: `saveframes'"
+			qui frames save "`dir'/`call_hash'.dtas", frames(`saveframes') replace
 		}
-	}
-	if "`saveframes'" != "" {
-		//dis "Saving frames: `saveframes'"
-		qui frames save "`dir'/`call_hash'.dtas", frames(`saveframes') replace
-	}
 	}
 
 	//========================================================
