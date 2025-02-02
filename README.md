@@ -20,8 +20,8 @@ cache [subcommand, options] : anycommand
 
 where optional sub-commands are:
 
-+ clean
-+ list
++ clean: Cleans all previously cached commands and any saved elements.
++ list: Lists all currently cached commands.
 
 and options are:
 
@@ -29,6 +29,8 @@ and options are:
 + project(string):  Allows for sub-folders within the cache directory if further control of cached contents is desired.
 + prefix(string): By default, all cached contents of a command will be saved with a prefix of `_ch` followed by the hash of the command as typed, along with the data signature of data in memory.  The prefix option will replace `_ch` with the indicated string
 + nodata: If `nodata` is specified, cache will save all command returns, but will not save data if any changes in data are detected.  
++ datacheck(string): Allows for data on disk to be checked to ensure command uniqueness.
++ framecheck(string): Allows for additional frames to be checked to ensure command uniqueness.
 + clear: Allows command implementation to proceed even if this would unsaved changes in data (similar, for example, to `use, clear`) 
 + replace: Forces cache to re-run the command and re-cache results, even if a previously cached version of command output has been found.  Such an example may be useful if commands are re-issued and command behaviour has changed.
 + keepall: Indicates that elements stored by previous commands in e(return) and s(return) lists should not be cleared prior to invoking the command requested with cache, allowing for their future use.
