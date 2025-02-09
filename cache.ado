@@ -81,7 +81,6 @@ program define cache, rclass properties(prefix)
 	}
 	local cmd_properties : results `cmd'
 	local cmd_results : results `cmd'
-
 	local origframe = c(frame)
 
 	//========================================================
@@ -221,6 +220,22 @@ program define cache, rclass properties(prefix)
 
  	if (length(`"`files'"') != 0 | length(`"`gfiles'"') != 0) & "`force'"=="" {
 		//dis "Cache found"
+		// Test for hash collision
+		tempname hashcheck
+		frame create `hashcheck'
+		cwf `hashcheck'
+		qui use "`dir'/`call_hash'_r_macros.dta", clear
+		qui count
+		local rnmax=r(N)
+		local matchedCommand = contents[`rnmax']
+		if "`matchedCommand'" != "`right'" {
+			dis "{err: Hash collision detected.}"
+			dis "{err: This is a very rare occurrence in which an identical hash has coincidentally been generated for two distinct strings.}"
+			dis "{err: You typed `matchedCommand'.}"
+			dis "{err: This matched with `right'.}"
+			dis "{err: Please slightly change your syntax of the typed command, which will result in a different hash.}"
+			exit 693
+		}
 
 		// Generate frames to load returns
 		foreach n in scalars macros matrices {
@@ -280,7 +295,7 @@ program define cache, rclass properties(prefix)
 					// Otherwise, remove this else if condition
 				}
 			}
-		}	
+		}
 
 		//========================================================
 		// Export matrices and ereturn post
@@ -322,7 +337,6 @@ program define cache, rclass properties(prefix)
 			cwf	`origframe'
 		}
 
-
 		//========================================================
 		// Export scalars and macros
 		//========================================================
@@ -345,6 +359,7 @@ program define cache, rclass properties(prefix)
 				clear
 				//Import scalar or macro file
 				use "`dir'/`call_hash'`rfile_name'", clear
+
 				qui count
 				if r(N)==0 continue 
 				foreach num of numlist 1(1)`r(N)' {
@@ -352,7 +367,7 @@ program define cache, rclass properties(prefix)
 					local contents = contents[`num']
 					// Return this element
 					if "`type'"=="macros"  {
-						if "`first_letter'"=="r" cap return local item = `contents'
+						if "`first_letter'"=="r" return local `item' `"`contents'"'
 						else cache_`treturn' "`contents'", name(`item') type("local")
 					}
 					else if "`type'"=="scalars" {
@@ -556,6 +571,25 @@ program define cache, rclass properties(prefix)
 	}
 	return add // add results of cmd
 	if `dtasave'==1 cap drop _funcvar
+
+	// Add cached command as r macro.  This allows for check of hash collision
+	cwf `scalars_results'
+	clear
+	cap use "`dir'/`call_hash'_r_macros.dta", clear
+	if _rc==0 {
+		qui count
+		local rn1 = r(N)+1
+		qui set obs `rn1'
+		qui replace item = "cached_command" in `rn1'
+		qui replace contents = "`right'" in `rn1'
+	}
+	else {
+		qui set obs 1
+		qui gen item = "cached_command"
+		qui gen contents = "`right'"
+	}
+	qui save "`dir'/`call_hash'_r_macros.dta", replace
+	cwf `origframe'
 
 	foreach n in scalars macros matrices {
 		frame drop ``n'_results'
