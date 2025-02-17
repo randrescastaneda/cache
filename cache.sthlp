@@ -47,6 +47,7 @@
 {synopt :{opt datacheck(string)}}Allows for data on disk to be checked to ensure command uniqueness{p_end}
 {synopt :{opt framecheck(string)}}Allows for additional frames to be checked to ensure command uniqueness{p_end}
 {synopt :{opt clear}}Allows command to proceed even if this saves over data currently in memory{p_end}
+{synopt :{opt hidden}}Does not return hidden elements as visible stored results{p_end}
 {synopt :{opt replace}}Re-runs command and saves over previously cached version{p_end}
 {synopt :{opt keep:all}}Does not clear previous ereturn and sreturn lists, permitting future use{p_end}
 {synoptline}
@@ -173,6 +174,16 @@ in {opt framecheck} as desired, and the name of each frame should simply be sepa
 {phang}
 {opt clear} Allows command implementation to proceed even if this would unsaved changes in 
 data (similar, for example, to {it: use, clear})
+
+{phang}
+{opt hidden} By default {cmd:cache} returns all stored results, including hidden results as standard 
+stored results, and so hidden results will be visible following {cmd: cache}.  If you would like hidden  
+elements to stay hidden, the {opt hidden} option should be specified.
+ See
+{mansection P returnRemarksandexamplesUsinghiddenandhistoricalstoredresults:{it:Using hidden and historical stored results}}
+and
+{mansection P returnRemarksandexamplesProgramminghiddenandhistoricalstoredresults:{it:Programming hidden and historical stored results}}
+under {it:Remarks and examples} of {bf:[P] return} for more information. 
 
 {phang}
 {opt replace} Forces {cmd:cache} to re-run the command and re-cache results, even if a 
