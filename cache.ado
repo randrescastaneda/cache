@@ -218,9 +218,14 @@ program define cache, rclass properties(prefix)
 	// Find graphs --------------------------
 	local gfiles: dir "`dir'" files "`call_hash'*.gph", respectcase
 
+	// If hide is specified, re-run first time even if run previously
+	local newhide = 0
 	if "`hidden'"!="" {
 		cap findfile `call_hash'_elements.dta, path(`dir')
-		if _rc!=0 local force force
+		if _rc!=0 {
+			local force force
+			local newhide = 1
+		}
 	}
 
  	if (length(`"`files'"') != 0 | length(`"`gfiles'"') != 0) & "`force'"=="" {
@@ -501,7 +506,12 @@ program define cache, rclass properties(prefix)
 	if "`hidden'"!="" qui log using "`dir'/rlist.txt", name(rlog) text replace
 	* Now, run the command on the right
 	capture noisily `right'
-	if "`hidden'"!="" return list
+	if "`hidden'"!="" {
+		dis ""
+		dis "The following elements will be returned as visible"
+		return list
+
+	}
 
 	// If requires clear, add if clear argument is provided
 	if _rc==4 & ("`clear'"=="clear") {
@@ -639,6 +649,9 @@ program define cache, rclass properties(prefix)
 		frame drop ``n'_results'
 	}
 	qui log close `logfile'
+	if `newhide'==1 {
+		cache_cleanlog, folder("`dir'") fname("`call_hash'")
+	}
 
 	//========================================================
 	// Store results (data) 
@@ -798,6 +811,23 @@ program define cache_setdir, rclass
 	return local dir = "`dir'"
 end
 
+// Clean log
+cap program drop cache_cleanlog
+program define cache_cleanlog, rclass
+	syntax [anything], folder(string) fname(string)
+
+	file open writelog using "`folder'/mostrecentcache.smcl", write text replace
+	file open readlog using "`folder'/`fname'.smcl", read text
+	file read readlog line
+	while regexm("`line'", "The following elements will be returned")!=1 {
+		file write writelog "`line'" _newline
+		file read readlog line
+	}
+	file close readlog
+	file close writelog
+	copy "`folder'/mostrecentcache.smcl" "`folder'/`fname'.smcl", replace
+end
+
 // Unpack saved file name like e_scalars, or r_matrix_PT
 cap program drop cache_parsefile
 program define cache_parsefile, rclass
@@ -860,7 +890,7 @@ exit
 ><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
 
 Notes:
-1. Could build in temporary caching (eg only while session lasts, using tempfiles or frames instead of dtas) -- note that this could be done by using tempdir
+1. Update log to remove the return if hidden specified 
 
 Version Control:
 
