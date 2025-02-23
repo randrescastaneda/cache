@@ -25,7 +25,7 @@ program define cache, rclass properties(prefix)
 		syntax [anything(name=subcmd)], [dir(string) project(string) *]
 
 		if ("`dir'" == "") {
-			cache_setdir
+			qui cache_setdir
 			local dir = "`r(dir)'"
 		}
 		if ("`project'" != "") {
@@ -43,7 +43,7 @@ program define cache, rclass properties(prefix)
 		syntax [anything(name=subcmd)], [dir(string) project(string) *]
 
 		if ("`dir'" == "") {
-			cache_setdir
+			qui cache_setdir
 			local dir = "`r(dir)'"
 		}
 		if ("`project'" != "") {
@@ -81,7 +81,6 @@ program define cache, rclass properties(prefix)
 	}
 	local cmd_properties : results `cmd'
 	local cmd_results : results `cmd'
-
 	local origframe = c(frame)
 
 	//========================================================
@@ -95,8 +94,11 @@ program define cache, rclass properties(prefix)
 		project(string)          ///  
 		prefix(string)           /// 
 		noDATA                   /// 
+		datacheck(string)        ///  
+		framecheck(string)       /// 
 		pause                    ///
 		KEEPall                  ///  does not clear previous returns  
+		hidden                   ///  keeps hidden returns hidden
 		clear                    ///  
 		replace                  ///  check if this does something else
 		force                    ///  force says to re-run even if the cache is there
@@ -114,7 +116,7 @@ program define cache, rclass properties(prefix)
 
 	// Set dir if not selected by user
 	if ("`dir'" == "") {
-		cache_setdir
+		qui cache_setdir
 		local dir = "`r(dir)'"
 	}
 	else {
@@ -150,6 +152,48 @@ program define cache, rclass properties(prefix)
 	local datasignature = "`r(datasignature)'"
 	return local datasignature = "`datasignature'"
 	
+	//  Incorporate additional data -------------------------
+	if (`"`datacheck'"' != "") {
+		tokenize `"`datacheck'"'
+
+		//dsignatures will hold data signatures of all added datasets
+		local dsignatures
+		preserve
+		while `"`1'"' != "" {
+			qui use `"`1'"'
+
+			qui datasignature 
+			local dsig = "`r(datasignature)'"
+			local dsignatures = "`dsignatures'_`dsig'"
+
+			macro shift
+		}
+		restore
+		local datasignature = "`datasignature'`dsignatures'"
+		return local datasignature = "`datasignature'`dsignatures'"
+	}
+
+	//  Incorporate additional frames -----------------------
+	if ("`framecheck'" != "") {
+		tokenize `"`framecheck'"'
+
+		//fsignatures will hold data signatures of all added frames
+		local fsignatures
+		qui pwf
+		local cframe = r(currentframe)
+		while `"`1'"' != "" {
+			cwf `1'
+			qui datasignature 
+			local fsig = "`r(datasignature)'"
+			local fsignatures = "`fsignatures'_`fsig'"
+
+			macro shift
+		}
+		cwf `cframe'
+		local datasignature = "`datasignature'`fsignatures'"
+		return local datasignature = "`datasignature'`fsignatures'"
+	}
+
 	//  combine both parts --------------------------
 	cache_hash get,  cmd_call("`cmd_hash'`datasignature'") prefix("`prefix'")
 	local call_hash = "`r(chhash)'"
@@ -174,9 +218,45 @@ program define cache, rclass properties(prefix)
 	// Find graphs --------------------------
 	local gfiles: dir "`dir'" files "`call_hash'*.gph", respectcase
 
+	// If hide is specified, re-run first time even if run previously
+	local newhide = 0
+	if "`hidden'"!="" {
+		cap findfile `call_hash'_elements.dta, path(`dir')
+		if _rc!=0 {
+			local force force
+			local newhide = 1
+		}
+	}
 
  	if (length(`"`files'"') != 0 | length(`"`gfiles'"') != 0) & "`force'"=="" {
 		//dis "Cache found"
+		// Test for hash collision
+		tempname hashcheck
+		frame create `hashcheck'
+		cwf `hashcheck'
+		qui use "`dir'/`call_hash'_r_macros.dta", clear
+		qui count
+		local rnmax=r(N)
+		local matchedCommand = contents[`rnmax']
+		if "`matchedCommand'" != "`right'" {
+			dis "{err: Hash collision detected.}"
+			dis "{err: This is a very rare occurrence in which an identical hash has coincidentally been generated for two distinct strings.}"
+			dis "{err: You typed `matchedCommand'.}"
+			dis "{err: This matched with `right'.}"
+			dis "{err: Please slightly change your syntax of the typed command, which will result in a different hash.}"
+			exit 693
+		}
+
+		// Open all elements of visible returns
+		local elfn
+		if "`hidden'"!="" {
+			tempname elements
+			frame create `elements'
+			frame `elements' {
+				use "`dir'/`call_hash'_elements.dta", clear
+			}
+			local elfn elframe(`elements')
+		}
 
 		// Generate frames to load returns
 		foreach n in scalars macros matrices {
@@ -236,7 +316,7 @@ program define cache, rclass properties(prefix)
 					// Otherwise, remove this else if condition
 				}
 			}
-		}	
+		}
 
 		//========================================================
 		// Export matrices and ereturn post
@@ -256,6 +336,7 @@ program define cache, rclass properties(prefix)
 						cwf	`origframe'
 						qui use "`dir'/`call_hash'", clear
 						ereturn post b V, esample(_funcvar) 
+						local loadfiles = 0
 					}
 					else {
 						ereturn post b V
@@ -266,17 +347,24 @@ program define cache, rclass properties(prefix)
 			foreach matrix of local ematrix {
 				cwf	`matrices_results'
 				if !inlist("`matrix'", "b", "V", "Cns") {
-					cache_ereturn `matrix', name(`matrix') type("matrix")
+					cache_ereturn `matrix', name(`matrix') type("matrix") `hidden' `elfn'
 				}
 			}
 			// Return rmatrices
 			foreach matrix of local rmatrix {
 				cwf	`matrices_results'
-				return matrix `matrix'=`matrix' 
+				if "`hidden'"!="" {					
+					frame `elements' {
+						qui count if regexm(element, "r\(`matrix'\)")==1
+						if r(N)==1 local hh "visible"
+						if r(N)==0 local hh "hidden"
+					}
+					return `hh' matrix `matrix'=`matrix' 
+				}
+				else return matrix `matrix'=`matrix'
 			}
 			cwf	`origframe'
 		}
-
 
 		//========================================================
 		// Export scalars and macros
@@ -300,6 +388,7 @@ program define cache, rclass properties(prefix)
 				clear
 				//Import scalar or macro file
 				use "`dir'/`call_hash'`rfile_name'", clear
+
 				qui count
 				if r(N)==0 continue 
 				foreach num of numlist 1(1)`r(N)' {
@@ -307,19 +396,39 @@ program define cache, rclass properties(prefix)
 					local contents = contents[`num']
 					// Return this element
 					if "`type'"=="macros"  {
-						if "`first_letter'"=="r" cap return local item = `contents'
-						else cache_`treturn' "`contents'", name(`item') type("local")
+						if "`first_letter'"=="r" {
+							if "`hidden'"!="" {					
+								frame `elements' {
+									qui count if regexm(element, "r\(`item'\)")==1
+									if r(N)==1 local hh "visible"
+									if r(N)==0 local hh "hidden"
+								}
+								return `hh' local `item' `"`contents'"'
+							}
+							else return local `item' `"`contents'"'
+						}
+						else cache_`treturn' "`contents'", name(`item') type("local") `hidden' `elfn'
 					}
 					else if "`type'"=="scalars" {
-						if "`first_letter'"=="r" return scalar `item' = `contents'
-						else cache_`treturn' `contents', name(`item') type("scalar")
+						if "`first_letter'"=="r" {
+							if "`hidden'"!="" {					
+								frame `elements' {
+									qui count if regexm(element, "r\(`item'\)")==1
+									if r(N)==1 local hh "visible"
+									if r(N)==0 local hh "hidden"
+								}
+								return `hh' scalar `item' = `contents'
+							}
+							else return scalar `item' = `contents'
+						}
+						else cache_`treturn' `contents', name(`item') type("scalar") `hidden' `elfn'
 					}
 				}
 			}
 		}
 		cwf	`origframe'
+		if `loadfiles' == 1 qui use "`dir'/`call_hash'", clear
 		if `loadframes'==1 qui frames use "`dir'/`call_hash'.dtas", `clear' replace
-
 
 		//========================================================
 		// Export graphs and store in memory
@@ -333,7 +442,6 @@ program define cache, rclass properties(prefix)
 		}
 
 
-
 		//========================================================
 		// Print command output
 		//========================================================
@@ -341,6 +449,7 @@ program define cache, rclass properties(prefix)
 			dis "{res}Command was cached.  Recovering previous output."
 			type "`log'"
 		}	
+		if "`hidden'"!="" frame drop `elements'
 		exit
 	}
 
@@ -355,7 +464,13 @@ program define cache, rclass properties(prefix)
 	// save signatures of each
 	foreach f of local allframes {
 		frame `f': qui datasignature
-		local sig_`f' = "`r(datasignature)'"
+
+		// Work with edge case: frames of 31 or 32 characters
+		if length("`f'")>30 {
+			mata: st_local("fname", strofreal(hash1("`f'", ., 2), "%12.0gc"))
+		}
+		else local fname = "`f'"
+		local s`fname' = "`r(datasignature)'"
 	}
 
 	// Save baseline graphs before running command
@@ -387,8 +502,17 @@ program define cache, rclass properties(prefix)
  	file close cachedcommands 
 
 
+	// Will log for return list, ereturn list and sreturn list to check for hidden returns
+	if "`hidden'"!="" qui log using "`dir'/rlist.txt", name(rlog) text replace
 	* Now, run the command on the right
 	capture noisily `right'
+	if "`hidden'"!="" {
+		dis ""
+		dis "The following elements will be returned as visible"
+		return list
+
+	}
+
 	// If requires clear, add if clear argument is provided
 	if _rc==4 & ("`clear'"=="clear") {
 		// At present, a small bug. 
@@ -403,9 +527,6 @@ program define cache, rclass properties(prefix)
 	}
 
 	local dtasave   = 0
-	//========================================================
-	// Store results (lists)
-	//========================================================
 
 	// ret list --------------
 	local classes = "r e s"
@@ -505,59 +626,88 @@ program define cache, rclass properties(prefix)
 	return add // add results of cmd
 	if `dtasave'==1 cap drop _funcvar
 
+	// Add cached command as r macro.  This allows for check of hash collision
+	cwf `scalars_results'
+	clear
+	cap use "`dir'/`call_hash'_r_macros.dta", clear
+	if _rc==0 {
+		qui count
+		local rn1 = r(N)+1
+		qui set obs `rn1'
+		qui replace item = "cached_command" in `rn1'
+		qui replace contents = "`right'" in `rn1'
+	}
+	else {
+		qui set obs 1
+		qui gen item = "cached_command"
+		qui gen contents = "`right'"
+	}
+	qui save "`dir'/`call_hash'_r_macros.dta", replace
+	cwf `origframe'
+
 	foreach n in scalars macros matrices {
 		frame drop ``n'_results'
 	}
 	qui log close `logfile'
+	if `newhide'==1 {
+		cache_cleanlog, folder("`dir'") fname("`call_hash'")
+	}
 
 	//========================================================
 	// Store results (data) 
 	//========================================================
-        if "`data'"=="" { 
+    if "`data'"=="" { 
         qui datasignature 
-	local datasignature2 = "`r(datasignature)'"
-	if ("`datasignature'" != "`datasignature2'") & `dtasave'==0 {
-		//dis "Data has changed, saving data"
-		qui save "`dir'/`call_hash'.dta", replace
-	}
+		local datasignature2 = "`r(datasignature)'"
+		if ("`datasignature'" != "`datasignature2'") & `dtasave'==0 {
+			//dis "Data has changed, saving data"
+			qui save "`dir'/`call_hash'.dta", replace
+		}
 
-	//========================================================
-	// Store results (frames) 
-	//========================================================
-	// data frame ----------
-	// if the the cmd returns or changes a data frame, save it
-	qui frames dir
-	local finalframes = r(frames)
-	local saveframes 
+		//========================================================
+		// Store results (frames) 
+		//========================================================
+		// data frame ----------
+		// if the the cmd returns or changes a data frame, save it
+		qui frames dir
+		local finalframes = r(frames)
+		local saveframes 
 
-	foreach f of local finalframes {
-		if `"`f'"'=="default" continue
+		foreach f of local finalframes {
+			if `"`f'"'=="default" continue
 
-		local framecheck = 0
-		foreach oframe of local allframes {
-			if "`f'"=="`oframe'" {
-				// dis "Frame `f' existed previously" (check if changed)
-				frame `f': qui datasignature
-				local signew_`f' = "`r(datasignature)'"
-				// test if signature has changed, and if so add to save list
-				if "`signew_`f''" != "`sig_`f''" {
-					frame `f': qui describe
-					if r(k) > 0 local saveframes = "`saveframes' `f'"
+			local framescheck = 0
+			foreach oframe of local allframes {
+				if "`f'"=="`oframe'" {
+					// dis "Frame `f' existed previously" (check if changed)
+					frame `f': qui datasignature
+
+					// Work with edge case: frames of 31 or 32 characters
+					if length("`f'")>30 {
+						mata: st_local("fname", strofreal(hash1("`f'", ., 2), "%12.0gc"))
+					}
+					else local fname = "`f'"
+
+					local t`fname' = "`r(datasignature)'"
+					// test if signature has changed, and if so add to save list
+					if "`t`fname''" != "`s`fname''" {
+						frame `f': qui describe
+						if r(k) > 0 local saveframes = "`saveframes' `f'"
+					}
+					local framescheck = 1
+					continue, break
 				}
-				local framecheck = 1
-				continue, break
+			}
+			if `framescheck'==0 {
+				frame `f': qui describe
+				if r(k) > 0 local saveframes = "`saveframes' `f'"
 			}
 		}
-		if `framecheck'==0 {
-			frame `f': qui describe
-			if r(k) > 0 local saveframes = "`saveframes' `f'"
+		if "`saveframes'" != "" {
+			//dis "Saving frames: `saveframes'"
+			qui frames save "`dir'/`call_hash'.dtas", frames(`saveframes') replace
 		}
 	}
-	if "`saveframes'" != "" {
-		//dis "Saving frames: `saveframes'"
-		qui frames save "`dir'/`call_hash'.dtas", frames(`saveframes') replace
-	}
-        }
 
 	//========================================================
 	// Store results (graphs) 
@@ -596,6 +746,40 @@ program define cache, rclass properties(prefix)
 		graph drop `defaultgraph'
 	}
 
+	if "`hidden'"!="" {
+		//========================================================
+		// Store results (lists)
+		//========================================================
+		qui log close rlog
+		qui log using "`dir'/elist.txt", name(elog) text replace
+		ereturn list
+		qui log close elog
+		qui log using "`dir'/slist.txt", name(slog) text replace
+		sreturn list
+		qui log close slog
+
+		//========================================================
+		// Generate list of observed elements
+		//========================================================
+		tempname observed_elements
+		frame create `observed_elements'
+		cwf `observed_elements'
+		gen element = ""
+		qui save "`dir'/`call_hash'_elements.dta", replace
+		foreach etype in r e s {
+			qui {
+				import delimited using "`dir'/`etype'list.txt", clear
+				cap gen v1 = ""
+				gen element = regexs(0) if regexm(v1,"`etype'\([^)]+\)")
+				drop if missing(element)
+				keep element
+				append using "`dir'/`call_hash'_elements.dta"
+				qui save "`dir'/`call_hash'_elements.dta", replace
+			}
+		}
+		cwf `origframe'
+		frame drop `observed_elements'
+	}
 end
 
 //========================================================
@@ -627,6 +811,23 @@ program define cache_setdir, rclass
 	return local dir = "`dir'"
 end
 
+// Clean log
+cap program drop cache_cleanlog
+program define cache_cleanlog, rclass
+	syntax [anything], folder(string) fname(string)
+
+	file open writelog using "`folder'/mostrecentcache.smcl", write text replace
+	file open readlog using "`folder'/`fname'.smcl", read text
+	file read readlog line
+	while regexm("`line'", "The following elements will be returned")!=1 {
+		file write writelog "`line'" _newline
+		file read readlog line
+	}
+	file close readlog
+	file close writelog
+	copy "`folder'/mostrecentcache.smcl" "`folder'/`fname'.smcl", replace
+end
+
 // Unpack saved file name like e_scalars, or r_matrix_PT
 cap program drop cache_parsefile
 program define cache_parsefile, rclass
@@ -648,22 +849,38 @@ end
 // ereturn program
 cap program drop cache_ereturn
 program define cache_ereturn, eclass
-	syntax anything(name=element), name(string) type(string)
-	ereturn `type' `name' = `element'
+	syntax anything(name=element), name(string) type(string) [hidden elframe(string)]
+	if "`hidden'"!="" {
+		frame `elframe' {
+			qui count if regexm(element, "e\(`name'\)")==1
+			if r(N)==1 local hh "visible"
+			if r(N)==0 local hh "hidden"
+		}
+	}
+	else local hh "visible"
+
+	ereturn `hh' `type' `name' = `element'
 end
 
 // sreturn program
 cap program drop cache_sreturn
 program define cache_sreturn, sclass
-	syntax anything(name=element), name(string) type(string)
+	syntax anything(name=element), name(string) type(string) [hidden elframe(string)]
 	sreturn `type' `name'=`element'
 end
 
-// return program (could be removed if desired as cache is r-class)
+// return program
 cap program drop cache_return
 program define cache_return, rclass
 	syntax anything(name=element), name(string) type(string)
-	return `type' `name'=`element'
+
+	frame elements {
+		qui count if regexm(element, "r\(`name'\)")==1
+		if r(N)==1 local hh "visible"
+		if r(N)==0 local hh "hidden"
+	}
+
+	return `hh' `type' `name'=`element'
 end
 
 
@@ -673,7 +890,7 @@ exit
 ><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><
 
 Notes:
-1. Could build in temporary caching (eg only while session lasts, using tempfiles or frames instead of dtas) -- note that this could be done by using tempdir
+1. Update log to remove the return if hidden specified 
 
 Version Control:
 

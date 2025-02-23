@@ -43,8 +43,11 @@
   if further organisation of cached commands is desired{p_end}
 {synopt :{opt prefix(string)}}Defines a prefix for all saved elements of a command; 
   default is _ch{p_end}
-{synopt :{opt nodata}}does not cache data if changes occur in data{p_end}
-{synopt :{opt clear}}allows command to proceed even if this saves over data currently in memory{p_end}
+{synopt :{opt nodata}}Does not cache data if changes occur in data{p_end}
+{synopt :{opt datacheck(string)}}Allows for data on disk to be checked to ensure command uniqueness{p_end}
+{synopt :{opt framecheck(string)}}Allows for additional frames to be checked to ensure command uniqueness{p_end}
+{synopt :{opt clear}}Allows command to proceed even if this saves over data currently in memory{p_end}
+{synopt :{opt hidden}}Does not return hidden elements as visible stored results{p_end}
 {synopt :{opt replace}}Re-runs command and saves over previously cached version{p_end}
 {synopt :{opt keep:all}}Does not clear previous ereturn and sreturn lists, permitting future use{p_end}
 {synoptline}
@@ -154,8 +157,33 @@ as the use of e(sample) will not be available.
 output and results will be returned, but updates to data will not be produced.
 
 {phang}
+{opt datacheck(string)} By default {cmd:cache} tests data in memory and the command syntax,
+and determines that a command has been cached if data in memory is identical and the command as
+typed is identical.  However, at times external data files may be called which have identical names,
+but altered contents.  In cases such as this, {opt datacheck} can be used to indicate that {cmd:cache}
+should also ensure that any external data files necessary for the command are also included when 
+generating a unique command identifier, or checking whether an identical command has previously
+been cached.  As many data files can be indicated in {opt datacheck} as desired, and the name of each
+Stata data file should simply be separated by white space.
+
+{phang}
+{opt framecheck(string)} Allows for identical behaviour as in {opt datacheck}, but now by testing
+the precise contents of any frames indicated in {opt framecheck}.  As many frames can be indicated 
+in {opt framecheck} as desired, and the name of each frame should simply be separated by white space.
+
+{phang}
 {opt clear} Allows command implementation to proceed even if this would unsaved changes in 
 data (similar, for example, to {it: use, clear})
+
+{phang}
+{opt hidden} By default {cmd:cache} returns all stored results, including hidden results as standard 
+stored results, and so hidden results will be visible following {cmd: cache}.  If you would like hidden  
+elements to stay hidden, the {opt hidden} option should be specified.
+ See
+{mansection P returnRemarksandexamplesUsinghiddenandhistoricalstoredresults:{it:Using hidden and historical stored results}}
+and
+{mansection P returnRemarksandexamplesProgramminghiddenandhistoricalstoredresults:{it:Programming hidden and historical stored results}}
+under {it:Remarks and examples} of {bf:[P] return} for more information. 
 
 {phang}
 {opt replace} Forces {cmd:cache} to re-run the command and re-cache results, even if a 
