@@ -31,7 +31,8 @@ and options are:
 + nodata: If `nodata` is specified, cache will save all command returns, but will not save data if any changes in data are detected.  
 + datacheck(string): Allows for data on disk to be checked to ensure command uniqueness.
 + framecheck(string): Allows for additional frames to be checked to ensure command uniqueness.
-+ clear: Allows command implementation to proceed even if this would unsaved changes in data (similar, for example, to `use, clear`) 
++ clear: Allows command implementation to proceed even if this would unsaved changes in data (similar, for example, to `use, clear`)
++ hidden: Instead of returning hidden elements as visible stored results re-hides any hidden elements.
 + replace: Forces cache to re-run the command and re-cache results, even if a previously cached version of command output has been found.  Such an example may be useful if commands are re-issued and command behaviour has changed.
 + keepall: Indicates that elements stored by previous commands in e(return) and s(return) lists should not be cleared prior to invoking the command requested with cache, allowing for their future use.
 
