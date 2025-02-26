@@ -321,7 +321,7 @@ All the files are available in the {browse "https://github.com/randrescastaneda/
 {marker howtocite}{...}
 {title:Thanks for citing this Stata command as follows}
 
-{p 4 8 2}Castaneda, R.Andres and Damian Clarke. (2024)
+{p 4 8 2}Castaneda, R.Andres and Damian Clarke. (2025)
 "cache: Stata Module to to cache all other Stata commands"
-				(version 0.0.0.9000). 
+				(version 0.0.1). 
 https://github.com/randrescastaneda/cache/ {p_end}
