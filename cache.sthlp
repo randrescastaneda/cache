@@ -130,9 +130,14 @@ cache directory.
 
 
 {phang}
-{opt dir(string)} Specifies the directory where cached contents of commands will be saved to be 
-restored later. If not specified, a subdirectory of the current working directory named _cache 
-is used by default.
+{opt dir(string)} Specifies the directory where cached command outputs will be saved 
+for later retrieval. If not specified, the default location is a _cache subdirectory 
+within the current working directory.To set a different default cache directory, 
+define the path in the global macro {opt cache_dir} within your 
+{help profile:profile.do} file or at the beginning of your do-file. The  _cache 
+subdirectory will be created inside the directory specified in global 
+{opt cache_dir}.
+
  
 {phang}
 {opt project(string)} Allows for sub-folders within the cache directory if further control of 
