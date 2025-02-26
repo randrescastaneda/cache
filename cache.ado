@@ -912,4 +912,8 @@ Version Control:
 *! version 0.0.0.9001  <2025jan13>
 *! -- incorporate subcommands for clean and list 
 *! -- add global cache_dir for users who want to set it up in their profile.do . Also, display commands as smcl
+*! version 0.0.0.9002  <2025feb26>
+*! -- implement data and frame check
+*! -- Implement hash collision check
+*! -- manage hidden elements
 
