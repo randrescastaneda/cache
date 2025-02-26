@@ -91,16 +91,16 @@ to data (unless {it:nodata} is specified); any alterations to {help frames}
 One of either
 
 {phang2}
-{cmd:cache} {it:{help cache##sbc_table:subcommand}} [{cmd:,} {it:{help cache##opt_table:options}}]
+{cmd:cache} [{cmd:,} {it:{help cache##opt_table:options}}] {cmd::} {help cache##command:{it:command}}
 
 {pstd}
 or
 
 {phang2}
-{cmd:cache} [{cmd:,} {it:{help cache##opt_table:options}}] {cmd::} {help cache##command:{it:command}}
+{cmd:cache} {it:{help cache##sbc_table:subcommand}} [{cmd:,} {it:{help cache##opt_table:options}}]
 
 {pstd}
-should be issued.  The use of {help cache##sbc_table:subcommand}s is for general management 
+should be issued. The use of {help cache##sbc_table:subcommand}s is for general management 
 of {cmd:cache} and should not be combined with individual commands to be cached.  Otherwise
 the standard usage of {cmd:cache}{cmd::} {help cache##command:{it:command}} will cache or 
 load the output of  {help cache##command:{it:command}}.
@@ -244,10 +244,13 @@ Now, issue alternative command so that return lists will be altered
 Finally, call cache again, and confirm that cache has reloaded all original command output 
 without re-running the command:
 
+
 {phang2}
 {cmd:. cache: regress price weight length}{p_end}
 {phang2}
 {cmd:. return list}
+
+{txt}                 ({stata "cache_examples cache_ex01":click to run})
 
 {ul:An example documenting time savings}
 
@@ -276,7 +279,7 @@ Now, set a second timer and run the command from the cached version:
 {phang2}
 {cmd:. timer list}
 
-
+{txt}                 ({stata "cache_examples cache_ex02":click to run})
 
 {marker return}{...}
 {title:Stored results}{p 50 20 2}{p_end}
