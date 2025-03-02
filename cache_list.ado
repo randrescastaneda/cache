@@ -32,7 +32,12 @@ program define cache_list, rclass
         //Check directory exists
         mata : st_numscalar("direxists", direxists("`dir'"))
         if direxists==0 {
-            dis "The indicated directory (`dir') does not exist."
+            dis as error `"The indicated directory (`dir') does not exist."'
+            exit 693
+        }
+        mata : st_numscalar("fileexists", fileexists("`dir'/cached_commands.txt"))
+        if fileexists==0 {
+            disp as error `"No command has been cached in ("`dir'")"'
             exit 693
         }
 
