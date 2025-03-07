@@ -50,7 +50,7 @@ disp "`toins'"
 
 
 make cache, replace toc pkg                                  ///  readme
-	version(0.0.0.9002)                                   ///
+	version(0.0.1)                                   ///
     license("MIT")                                         ///
    author(`""R.Andres Castaneda" "Damian Clarke""')                       ///
     affiliation(`" "The World Bank" "University of Chile & University of Exeter""')                                                         ///

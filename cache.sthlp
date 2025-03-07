@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 0.0.0.9000 dec 15 2024}{...}
+{* *! version 0.0.1 mar 09 2025}{...}
 {vieweralsosee "" "--"}{...}
 {viewerjumpto "Syntax"          "cache##syntax"}{...}
 {viewerjumpto "Description"     "cache##description"}{...}
@@ -132,7 +132,7 @@ cache directory.
 {phang}
 {opt dir(string)} Specifies the directory where cached command outputs will be saved 
 for later retrieval. If not specified, the default location is a _cache subdirectory 
-within the current working directory.To set a different default cache directory, 
+within the current working directory. To set a different default cache directory, 
 define the path in the global macro {opt cache_dir} within your 
 {help profile:profile.do} file or at the beginning of your do-file. The  _cache 
 subdirectory will be created inside the directory specified in global 
@@ -300,7 +300,7 @@ following in {cmd: r()}:
 {marker authors}{...}
 {title:Authors}
 
-{p 4 4 4}R.Andres Castaneda, Development Data Group, Development Economics, The World Bank{p_end}
+{p 4 4 4}R.Andres Castaneda, Data Group, Department of Development Economics, The World Bank{p_end}
 {p 6 6 4}Email: {browse "mailto: acastanedaa@worldbank.org":  acastanedaa@worldbank.org}{p_end}
 {p 6 6 4}GitHub:{browse "https://github.com/randrescastaneda": randrescastaneda }{p_end}
 
@@ -312,10 +312,27 @@ following in {cmd: r()}:
 
 {marker contact}{...}
 {title:Contact}
+
 {pstd}
 Any comments, suggestions, or bugs can be reported in the
 {browse "https://github.com/randrescastaneda/cache/issues":GitHub issues page}.
-All the files are available in the {browse "https://github.com/randrescastaneda/cache":GitHub repository}.
+
+{marker development}{...}
+{title:Development}
+
+{pstd}
+The latest stable version of the {cmd: cache} package is always available in the most recent release of the main branch of the 
+{browse "https://github.com/randrescastaneda/cache":randrescastaneda/cache} GitHub repository. You can install it using the 
+{browse "https://github.com/haghish/github":github} Stata package by 
+{browse "https://github.com/haghish":E. F. Haghish}.
+
+{phang2}
+{cmd:. net install github, from("https://haghish.github.io/github/")}{p_end}
+{phang2}
+{cmd:. github install randrescastaneda/cache}{p_end}
+
+{pstd}
+Pre-release versions are also available in the GitHub repository. These versions include new features still in testing and should be used at the user's discretion.
 
 
 {marker howtocite}{...}

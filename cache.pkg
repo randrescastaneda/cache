@@ -1,14 +1,15 @@
-v 0.0.0.9002
+v 0.0.1
 d 'CACHE': Suite to Cache output of Stata commands
 d 
 d A program to cache all other Stata commands
 d 
-d Distribution-Date:   20250226
+d Distribution-Date:   20250307
 d License: MIT
 d 
 F cache.ado
 F cache.sthlp
 F cache_clean.ado
+F cache_examples.ado
 F cache_hash.ado
 F cache_list.ado
 F cache_utils.ado

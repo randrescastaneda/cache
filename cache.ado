@@ -916,4 +916,5 @@ Version Control:
 *! -- implement data and frame check
 *! -- Implement hash collision check
 *! -- manage hidden elements
-
+*! version 0.0.1  <2025mar09>
+*! -- prepare for SSC submission
