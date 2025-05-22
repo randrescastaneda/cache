@@ -7,6 +7,7 @@
 {viewerjumpto "Options"         "cache##options"}{...}
 {viewerjumpto "Remarks"         "cache##remarks"}{...}
 {viewerjumpto "Examples"        "cache##examples"}{...}
+{viewerjumpto "Global control"  "cache##global"}{...}
 {viewerjumpto "Stored results"  "cache##returns"}{...}
 {viewerjumpto "Authors"         "cache##authors"}{...}
 {viewerjumpto "Contact"         "cache##contact"}{...}
@@ -192,7 +193,7 @@ under {it:Remarks and examples} of {bf:[P] return} for more information.
 
 {phang}
 {opt replace} Forces {cmd:cache} to re-run the command and re-cache results, even if a 
-previously cached version of command output has been found. Such an example may be useful 
+previously cached version of command output has been found. The use of {opt replace} may be useful 
 if commands are re-issued and command behaviour has changed.
 
 {phang}
@@ -207,6 +208,34 @@ commands, for example if an r-class command is issued, results from previous e-c
 will be cleared to avoid being saved by {cmd:cache}.  If such behaviour is undesired, 
 the {opt keepall} option should be used so that any previous return lists are maintained in
 memory.
+
+
+{marker global}{...}
+{title:Global control}
+
+{pstd}
+Standard {cmd:cache} behaviour can also be over-ridden by using a number of global variables.
+Specifically, the following globals can be set, and if these are set, these will override any
+options or default behaviour.  
+
+{synoptset 24 tabbed}{...}
+{synopthdr:Global name and value}
+{synoptline}
+{synopt :{opt cache_replace} replace}Automatically activates the replace option, overwriting the cache each time.{p_end}
+{synopt :{opt cache_on} off} Bypasses caching entirely (effectively ignoring the {it: cache:} prefix if present).{p_end}
+{synopt :{opt cache_prefix} string} Define a prefix for saving cached contents, overriding the default {it: _ch} used in the prefix
+option with any {it: string} defined by the user.{p_end}
+{synopt :{opt cache_dir} dir_name} Define a default location for saving cached
+contents, overriding the default  {it: _cache} directory with any {it: dir_name} defined by the user.{p_end}
+{synopt :{opt cache_project} dir_name} Define a default location within the cache
+directory to store cached output with any  {it: dir_name} defined by the user.{p_end}
+{synoptline}
+{pstd}
+
+{pstd}
+This allows for permanent control of cache {cmd:cache} for the entire duration a global is set.
+If such global control is detected by cache, a note will be provided to users warning that global
+control is detected.
 
 
 {marker examples}{...}
@@ -281,7 +310,7 @@ Now, set a second timer and run the command from the cached version:
 
 {txt}                 ({stata "cache_examples cache_ex02":click to run})
 
-{marker return}{...}
+{marker returns}{...}
 {title:Stored results}{p 50 20 2}{p_end}
 
 {pstd}
