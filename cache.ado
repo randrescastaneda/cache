@@ -106,26 +106,26 @@ program define cache, rclass properties(prefix)
 	//========================================================
 	//  Permitting global control
 	//========================================================
-	if "$cache_replace"=="replace" {
-		dis "{result: Note:}{text: cache is set to replace previously cached files via the cache_replace global.}"
+	if ("${cache_replace}" == "replace" & "`replace'" == "") {
+		dis "{result: Note:}{text: cache is set to replace previously cached files via the {res:{it:cache_replace}} global.}"
 		local replace replace
 	}
-	if "$cache_on"=="off" {
-		dis "{result: Note:}{text: cache is bypassed given the cache_on global.}"
+	if ("${cache_on}"=="off") {
+		dis "{result: Note:}{text: cache is bypassed given that global {res:{it:cache_on}} is set to {res:{ul:off}}.}"
 		`right'
 		exit
 	}
-	if length("$cache_prefix")>0 {
-		dis "{result: Note:}{text: cache prefix is set via the cache_prefix global.}"
-		local prefix $cache_prefix
+	if (length("${cache_prefix}") > 0 & "`prefix'" == "") {
+		dis "{result: Note:}{text: cache prefix is set via the {res:{it:cache_prefix}} global.}"
+		local prefix ${cache_prefix}
 	}
-	if length("$cache_dir")>0 {
-		dis "{result: Note:}{text: cache directory is set via the cache_dir global.}"
-		local dir $cache_dir
+	if (length("${cache_dir}") > 0 & "`dir'" == "") {
+		dis "{result: Note:}{text: cache directory is set via the {res:{it:cache_dir}} global.}"
+		local dir ${cache_dir}
 	}
-	if length("$cache_project")>0 {
-		dis "{result: Note:}{text: cache project directory is set via the cache_project global.}"
-		local project $cache_project
+	if (length("${cache_project}") > 0 & "`project'" == "") {
+		dis "{result: Note:}{text: cache project directory is set via the {res:{it:cache_project}} global.}"
+		local project ${cache_project}
 	}
 
 	//========================================================
