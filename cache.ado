@@ -100,10 +100,33 @@ program define cache, rclass properties(prefix)
 		KEEPall                  ///  does not clear previous returns  
 		hidden                   ///  keeps hidden returns hidden
 		clear                    ///  
-		replace                  ///  check if this does something else
-		force                    ///  force says to re-run even if the cache is there
+		replace                  ///  replace says to re-run even if the cache is there
 	] 
 
+	//========================================================
+	//  Permitting global control
+	//========================================================
+	if "$cache_replace"=="replace" {
+		dis "{result: Note:}{text: cache is set to replace previously cached files via the cache_replace global.}"
+		local replace replace
+	}
+	if "$cache_on"=="off" {
+		dis "{result: Note:}{text: cache is bypassed given the cache_on global.}"
+		`right'
+		exit
+	}
+	if length("$cache_prefix")>0 {
+		dis "{result: Note:}{text: cache prefix is set via the cache_prefix global.}"
+		local prefix $cache_prefix
+	}
+	if length("$cache_dir")>0 {
+		dis "{result: Note:}{text: cache directory is set via the cache_dir global.}"
+		local dir $cache_dir
+	}
+	if length("$cache_project")>0 {
+		dis "{result: Note:}{text: cache project directory is set via the cache_project global.}"
+		local project $cache_project
+	}
 
 	//========================================================
 	// Set up and defenses
@@ -223,12 +246,12 @@ program define cache, rclass properties(prefix)
 	if "`hidden'"!="" {
 		cap findfile `call_hash'_elements.dta, path(`dir')
 		if _rc!=0 {
-			local force force
+			local replace replace
 			local newhide = 1
 		}
 	}
 
- 	if (length(`"`files'"') != 0 | length(`"`gfiles'"') != 0) & "`force'"=="" {
+ 	if (length(`"`files'"') != 0 | length(`"`gfiles'"') != 0) & "`replace'"=="" {
 		//dis "Cache found"
 		// Test for hash collision
 		tempname hashcheck
@@ -446,7 +469,7 @@ program define cache, rclass properties(prefix)
 		// Print command output
 		//========================================================
 		if `logfound'==1 {
-			dis "{res}Command was cached.  Recovering previous output."
+			dis "{result: Note:}{text: Command was cached.  Recovering previous output.}"
 			type "`log'"
 		}	
 		if "`hidden'"!="" frame drop `elements'
@@ -497,7 +520,7 @@ program define cache, rclass properties(prefix)
 	qui log using "`dir'/`call_hash'", name(`logfile') replace
 
 	//Write current command to cache log for future reference if consulted
-	file open cachedcommands using "`dir'/cached_commands.txt", write append
+	qui file open cachedcommands using "`dir'/cached_commands.txt", write append
 	file write cachedcommands _n `". {cmd:`right'}"'  _n
  	file close cachedcommands 
 
