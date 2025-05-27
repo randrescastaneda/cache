@@ -117,15 +117,15 @@ program define cache, rclass properties(prefix)
 	}
 	if (length("${cache_prefix}") > 0 & "`prefix'" == "") {
 		dis "{result: Note:}{text: cache prefix is set via the {res:{it:cache_prefix}} global.}"
-		local prefix ${cache_prefix}
+		local prefix: copy global cache_prefix
 	}
 	if (length("${cache_dir}") > 0 & "`dir'" == "") {
 		dis "{result: Note:}{text: cache directory is set via the {res:{it:cache_dir}} global.}"
-		local dir ${cache_dir}
+		local dir: copy global cache_dir
 	}
 	if (length("${cache_project}") > 0 & "`project'" == "") {
 		dis "{result: Note:}{text: cache project directory is set via the {res:{it:cache_project}} global.}"
-		local project ${cache_project}
+		local project: copy global cache_project
 	}
 
 	//========================================================
