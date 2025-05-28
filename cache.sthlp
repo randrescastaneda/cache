@@ -214,9 +214,9 @@ memory.
 {title:Global control}
 
 {pstd}
-Standard {cmd:cache} behaviour can also be over-ridden by using a number of global variables.
+Standard {cmd:cache} behaviour can also be controlled by using a number of global variables.
 Specifically, the following globals can be set, and if these are set, these will override any
-options or default behaviour.  
+default behaviour.  
 
 {synoptset 24 tabbed}{...}
 {synopthdr:Global name and value}
@@ -233,9 +233,13 @@ directory to store cached output with any  {it: dir_name} defined by the user.{p
 {pstd}
 
 {pstd}
-This allows for permanent control of cache {cmd:cache} for the entire duration a global is set.
+This allows for permanent control of {cmd:cache} for the entire duration a global is set.
 If such global control is detected by cache, a note will be provided to users warning that global
-control is detected.
+control is detected.  Note that if both global control is set {it: and} a command option is set,
+the command option will be take primacy.  For example, if the {opt cache_project} global is set to 
+{it: my_sub_project}, all cached commands will be stored in a directory named in this fashion. 
+However if a specific call to cache then also indicates {opt project(my_main_project)}, this 
+specific cached command will be placed in the my_main_project directory.
 
 
 {marker examples}{...}

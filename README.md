@@ -355,6 +355,25 @@ Do you want to continue? (y/n): . y
 Cached commands: 
 ```
 
+## Global control
+Standard cache behaviour can also be controlled by using a number of global variables. Specifically, the following globals can be set, and if these are set, these will override any default behaviour.  
+
+| Global name | Value | Description |
+| ----------- | ----- | ----------- |
+|cache_replace | replace| Automatically activates the replace option, overwriting the cache each time.|
+|cache_on      | off   | Bypasses caching entirely (effectively ignoring the _cache:_ prefix if present). |
+|cache_prefix  | string | Define a prefix for saving cached contents, overriding the default *_ch* used in the prefix option with any *string* defined by the user. |
+|cache_dir | dir_name | Define a default location for saving cached contents, overriding the default  *_cache* directory with any *dir_name* defined by the user. |
+| cache_project | dir_name | Define a default location within the cache directory to store cached output with any *dir_name* |
+
+This allows for permanent control of cache for the entire duration a global is set.
+If such global control is detected by cache, a note will be provided to users warning that global
+control is detected.  Note that if both global control is set *and* a command option is set,
+the command option will be take primacy.  For example, if the cache_project global is set to 
+*my_sub_project*, all cached commands will be stored in a directory named in this fashion. 
+However if a specific call to cache then also indicates *project(my_main_project)*, this 
+specific cached command will be placed in the my_main_project directory.
+
 
 ## Authors
 
