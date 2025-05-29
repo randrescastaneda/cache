@@ -941,3 +941,5 @@ Version Control:
 *! -- manage hidden elements
 *! version 0.0.1  <2025mar09>
 *! -- prepare for SSC submission
+*! version 0.0.2  <2025may29>
+*! -- Introduce global control variables
