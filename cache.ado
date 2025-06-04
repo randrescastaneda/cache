@@ -317,7 +317,19 @@ program define cache, rclass properties(prefix)
 					qui ds _rownames, not
 					local savvars = r(varlist)
 					mkmat `savvars', matrix("`extra'") rownames(_rownames)
-			
+
+					// rownames replaces . in names with _.  Problematic.
+					// Generate rownames directly to conserve .
+					local Nlabs = _N
+					local rownames
+					local haschar=0
+					forvalues i=1/`Nlabs' {
+						local rowname = _rownames[`i']
+						local rownames = "`rownames' `rowname'"
+						if regexm("`rowname'", "[ .]") local haschar = 1
+					}
+					if `haschar'==1 matname `extra' `rownames', rows(.) explicit
+
 					// Now grab colnames from labels
 					local colnames
 					foreach var of varlist `savvars' {
