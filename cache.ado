@@ -237,6 +237,12 @@ program define cache, rclass properties(prefix)
 	local files: dir "`dir'" files "`call_hash'*.dta*", respectcase
 	local loadfiles  = 0
 	local loadframes = 0
+	// reverse files so that e_ will load last
+	//local reverse
+    //foreach ff in `files' {
+	//	local reverse `ff' `reverse'
+	//}
+	//local files `reverse'
 
 	// Find graphs --------------------------
 	local gfiles: dir "`dir'" files "`call_hash'*.gph", respectcase
@@ -316,7 +322,7 @@ program define cache, rclass properties(prefix)
 					qui use "`dir'/`call_hash'`rfile_name'", clear
 					qui ds _rownames, not
 					local savvars = r(varlist)
-					mkmat `savvars', matrix("`extra'") rownames(_rownames)
+					mkmat `savvars', matrix("`first_letter'__`extra'") rownames(_rownames)
 
 					// rownames replaces . in names with _.  Problematic.
 					// Generate rownames directly to conserve .
@@ -328,21 +334,20 @@ program define cache, rclass properties(prefix)
 						local rownames = "`rownames' `rowname'"
 						if regexm("`rowname'", "[ .]") local haschar = 1
 					}
-					if `haschar'==1 matname `extra' `rownames', rows(.) explicit
-
+					if `haschar'==1 matname `first_letter'__`extra' `rownames', rows(.) explicit
 					// Now grab colnames from labels
 					local colnames
 					foreach var of varlist `savvars' {
 						local colname: variable label `var'
 						local colnames = "`colnames' `colname'"
 					}
-					matname `extra' `colnames', columns(.) explicit
+					matname `first_letter'__`extra' `colnames', columns(.) explicit
 
 					//Save matrix in list for later processing
 					local `first_letter'matrix ``first_letter'matrix' `extra'
 					cwf `origframe'
 					//Sets extra as empty to avoid passing forward matrix
-					local extra = ""
+					local `first_letter'__extra = ""
 				}
 				else if "`type'"=="scalars"|"`type'"=="macros" {
 					//We could consider using this to just generate a list
@@ -370,11 +375,11 @@ program define cache, rclass properties(prefix)
 					if `loadfiles' == 1 {
 						cwf	`origframe'
 						qui use "`dir'/`call_hash'", clear
-						ereturn post b V, esample(_funcvar) 
+						ereturn post e__b e__V, esample(_funcvar) 
 						local loadfiles = 0
 					}
 					else {
-						ereturn post b V
+						ereturn post e__b e__V
 					}
 				}
 			}
@@ -382,7 +387,7 @@ program define cache, rclass properties(prefix)
 			foreach matrix of local ematrix {
 				cwf	`matrices_results'
 				if !inlist("`matrix'", "b", "V", "Cns") {
-					cache_ereturn `matrix', name(`matrix') type("matrix") `hidden' `elfn'
+					cache_ereturn e__`matrix', name(`matrix') type("matrix") `hidden' `elfn'
 				}
 			}
 			// Return rmatrices
@@ -394,9 +399,9 @@ program define cache, rclass properties(prefix)
 						if r(N)==1 local hh "visible"
 						if r(N)==0 local hh "hidden"
 					}
-					return `hh' matrix `matrix'=`matrix' 
+					return `hh' matrix `matrix'=r__`matrix' 
 				}
-				else return matrix `matrix'=`matrix'
+				else return matrix `matrix'=r__`matrix'
 			}
 			cwf	`origframe'
 		}
