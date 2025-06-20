@@ -1,8 +1,8 @@
-v 0.0.2
+v 0.0.3
 d Authors:
 d  -- R.Andres Castaneda, The World Bank (acastanedaa@worldbank.org")
 d  -- Damian Clarke, University of Chile & University of Exeter (dclarke4@worldbank.org, dclarke@fen.uchile.cl)
 
-d 'cache': A program to cache all other Stata commands
+d 'cacheit': A program to cache all other Stata commands
 
-p cache
+p cacheit
